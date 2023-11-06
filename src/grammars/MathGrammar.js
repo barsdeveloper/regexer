@@ -1,4 +1,4 @@
-import Regexer from "../src/Regexer.js"
+import Regexer from "../Regexer.js"
 
 const R = Regexer
 

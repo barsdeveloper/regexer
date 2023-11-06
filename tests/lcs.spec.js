@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test"
-import longestCommonSubsequence from "../src/longestCommonSubsequence.js"
+import longestCommonSubsequence from "../src/transformers/longestCommonSubsequence.js"
 
 class EqualityString {
     #value

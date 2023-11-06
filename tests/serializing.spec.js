@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test"
 import EscapedCharParser from "../src/parser/EscapedCharParser.js"
-import RegExpGrammar, { R } from "../grammars/RegExpGrammar.js"
+import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 
 test("Test 1", async ({ page }) => {
     expect(R.escapedChar("\x41", EscapedCharParser.Type.HEX).toString()).toEqual(String.raw`\x41`)

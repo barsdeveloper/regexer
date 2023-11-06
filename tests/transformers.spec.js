@@ -1,4 +1,4 @@
-import { R } from "../grammars/RegExpGrammar.js"
+import { R } from "../src/grammars/RegExpGrammar.js"
 import { test, expect } from "@playwright/test"
 import DeadParserElimination from "../src/transformers/DeadParserElimination.js"
 

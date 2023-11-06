@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test"
 import EscapedCharParser from "../src/parser/EscapedCharParser.js"
-import JsonGrammar from "../grammars/JsonGrammar.js"
+import JsonGrammar from "../src/grammars/JsonGrammar.js"
 import LookaroundParser from "../src/parser/LookaroundParser.js"
-import MathGrammar from "../grammars/MathGrammar.js"
-import RegExpGrammar, { R } from "../grammars/RegExpGrammar.js"
+import MathGrammar from "../src/grammars/MathGrammar.js"
+import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import sample1 from "./sample1.js"
 import sample2 from "./sample2.js"
 

@@ -1,5 +1,5 @@
-import Parser from "../src/parser/Parser.js"
-import Regexer from "../src/Regexer.js"
+import Parser from "../parser/Parser.js"
+import Regexer from "../Regexer.js"
 
 const R = Regexer
 

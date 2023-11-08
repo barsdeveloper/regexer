@@ -2,20 +2,27 @@ import Regexer from "../Regexer.js"
 
 export default class Transformer {
 
+    #next = null
+
+    chain(transformer) {
+        this.#next = transformer
+        return transformer
+    }
+
     /**
      * @template {Parser<any>} T
      * @param {Regexer<T>} regexer
      * @return {Regexer<T>}
      */
     transform(regexer) {
-        const parser = regexer.getParser()
-        const actualParser = parser.actualParser()
+        const actualParser = regexer.getParser().actualParser(true)
         let transformed = this.doTransform(actualParser)
-        if (actualParser !== parser) {
-            transformed = parser.withActualParser(transformed)
+        if (actualParser !== transformed) {
+            transformed = regexer.getParser().withActualParser(transformed)
+            // @ts-expect-error
+            return new Regexer(transformed, true)
         }
-        // @ts-expect-error
-        return transformed !== regexer.getParser() ? new Regexer(transformed, true) : regexer
+        return regexer
     }
 
     /**

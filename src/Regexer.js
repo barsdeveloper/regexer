@@ -17,6 +17,7 @@ export default class Regexer {
 
     #parser
     #optimized
+    #groups = new Map()
 
     static #numberTransformer = v => Number(v)
     static #firstElementGetter = ([v, _]) => v

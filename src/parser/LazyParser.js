@@ -24,10 +24,23 @@ export default class LazyParser extends Parser {
         return this.#resolvedPraser
     }
 
-    actualParser() {
-        return this.resolve().actualParser()
+    unwrap() {
+        return this.resolve()
     }
 
+    /**
+     * @template {Parser<any>} P
+     * @param {P} parser
+     */
+    wrap(parser) {
+        const regexerConstructor = this.#parser().constructor
+        // @ts-expect-error
+        return new LazyParser(() => new regexerConstructor(parser))
+    }
+
+    actualParser(ignoreGroup = false) {
+        return this.resolve().actualParser(ignoreGroup)
+    }
 
     /** @returns {Parser<any>} */
     withActualParser(other) {
@@ -50,8 +63,16 @@ export default class LazyParser extends Parser {
      * @param {Boolean} strict
      */
     equals(other, strict) {
+        if (other instanceof LazyParser && this.#parser === other.#parser) {
+            return true
+        }
         this.resolve()
-        return this.#resolvedPraser.equals(other, strict)
+        if (!strict) {
+            other = other.actualParser()
+        } else if (other instanceof LazyParser) {
+            other = other.resolve()
+        }
+        return this.#resolvedPraser === other || this.#resolvedPraser.equals(other, strict)
     }
 
     toString(indent = 0) {

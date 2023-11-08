@@ -6,8 +6,8 @@
  */
 
 /**
- * @template T
- * @typedef {import("./parser/Parser.js").default<T>} Parser
+ * @template V
+ * @typedef {import("./parser/Parser.js").default<V>} Parser
  */
 
 /**

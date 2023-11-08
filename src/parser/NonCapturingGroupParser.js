@@ -24,9 +24,18 @@ export default class NonCapturingGroupParser extends Parser {
         this.#parser = parser
     }
 
+    unwrap() {
+        return this.#parser
+    }
+
+    /** @param {Parser<any>} parser */
+    wrap(parser) {
+        return new NonCapturingGroupParser(parser)
+    }
+
     /** @returns {Parser<any>} */
-    actualParser() {
-        return this.#parser.actualParser()
+    actualParser(ignoreGroup = false) {
+        return this.#parser.actualParser(ignoreGroup)
     }
 
     /** @returns {Parser<any>} */

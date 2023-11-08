@@ -19,6 +19,18 @@ export default class AtomicGroupParser extends Parser {
         this.#parser = parser
     }
 
+    unwrap() {
+        return this.#parser
+    }
+
+    /**
+     * @template {Parser<any>} P
+     * @param {P} parser
+     */
+    wrap(parser) {
+        return new AtomicGroupParser(parser)
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position

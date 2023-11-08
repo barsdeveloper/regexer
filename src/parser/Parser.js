@@ -18,6 +18,20 @@ export default class Parser {
         })
     }
 
+    /** @returns {Parser<Value>} */
+    unwrap() {
+        return null
+    }
+
+    /**
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @returns {Parser<Value>}
+     */
+    wrap(parser) {
+        throw new Error("Not implemented")
+    }
+
     startsWith() {
         return ""
     }
@@ -32,7 +46,7 @@ export default class Parser {
     }
 
     /** @returns {Parser<any>} */
-    actualParser() {
+    actualParser(ignoreGroup = false) {
         return this
     }
 

@@ -36,8 +36,9 @@ export default class DeadParserElimination extends Transformer {
                     writiableAlternatives().splice(i + 1)
                 } else if (current instanceof FailureParser) {
                     // FailureParser and following parsers would never match
-                    writiableAlternatives().splice(i)
-                    break
+                    writiableAlternatives().splice(i, 1)
+                    --i
+                    continue
                 } else {
                     // Check if this pattern appeared previously in the alternatives
                     for (let j = i - 1; j >= 0; --j) {
@@ -108,6 +109,7 @@ export default class DeadParserElimination extends Transformer {
         }
 
         if (parser instanceof SequenceParser) {
+
         }
 
         return parser

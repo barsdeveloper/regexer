@@ -18,6 +18,15 @@ export default class NegativeParser extends Parser {
         this.#parser = parser
     }
 
+    unwrap() {
+        return this.#parser
+    }
+
+    /** @param {Parser<any>} parser */
+    wrap(parser) {
+        return new NegativeParser(parser)
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position

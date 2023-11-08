@@ -27,8 +27,17 @@ export default class MapParser extends Parser {
         this.#mapper = mapper
     }
 
-    actualParser() {
-        return this.#parser.actualParser()
+    unwrap() {
+        return this.#parser
+    }
+
+    /** @param {Parser<any>} parser */
+    wrap(parser) {
+        return new MapParser(parser, this.#mapper)
+    }
+
+    actualParser(ignoreGroup = false) {
+        return this.#parser.actualParser(ignoreGroup)
     }
 
     /** @returns {Parser<any>} */

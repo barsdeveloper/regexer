@@ -2,8 +2,8 @@ import Parser from "./Parser.js"
 import Reply from "../Reply.js"
 
 /**
- * @template {Parser<any>} P
- * @template {(v: ParserValue<P>, input: String, position: Number) => Regexer<Parser<any>>} C
+ * @template {Parser<any>} T
+ * @template {(v: ParserValue<T>, input: String, position: Number) => Regexer<Parser<any>>} C
  * @extends Parser<ReturnType<C>>
  */
 export default class ChainedParser extends Parser {
@@ -16,13 +16,25 @@ export default class ChainedParser extends Parser {
     #fn
 
     /**
-     * @param {P} parser
+     * @param {T} parser
      * @param {C} chained
      */
     constructor(parser, chained) {
         super()
         this.#parser = parser
         this.#fn = chained
+    }
+
+    unwrap() {
+        return this.#parser
+    }
+
+    /**
+     * @template {Parser<ParserValue<T>>} P
+     * @param {P} parser
+     */
+    wrap(parser) {
+        return new ChainedParser(parser, this.#fn)
     }
 
     /**

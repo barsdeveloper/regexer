@@ -13,11 +13,36 @@ export default class CapturingGroupParser extends Parser {
         return this.#id
     }
 
-    /** @param {T} parser */
-    constructor(parser, id = Symbol()) {
+    /**
+     * @param {T} parser
+     * @param {String | Symbol} id
+     */
+    constructor(parser, id) {
         super()
         this.#parser = parser
         this.#id = id
+    }
+
+    unwrap() {
+        return this.#parser
+    }
+
+    /**
+     * @template {Parser<any>} P
+     * @param {P} parser
+     */
+    wrap(parser) {
+        return new CapturingGroupParser(parser, this.#id)
+    }
+
+    /** @returns {Parser<any>} */
+    actualParser(ignoreGroup = false) {
+        return ignoreGroup ? this.#parser.actualParser(ignoreGroup) : this
+    }
+
+    /** @returns {Parser<any>} */
+    withActualParser(other) {
+        return new CapturingGroupParser(this.#parser.withActualParser(other), this.#id)
     }
 
     /**
@@ -36,7 +61,9 @@ export default class CapturingGroupParser extends Parser {
         if (!strict) {
             other = other.actualParser()
         }
-        return other instanceof CapturingGroupParser && this.#parser.equals(other.#parser, strict)
+        return other instanceof CapturingGroupParser
+            && this.#id == other.#id
+            && this.#parser.equals(other.#parser, strict)
     }
 
     toString(indent = 0) {

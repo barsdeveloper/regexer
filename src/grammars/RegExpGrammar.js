@@ -49,9 +49,10 @@ export const R = class extends Regexer {
     /**
      * @template {Regexer<Parser<any>>} T
      * @param {T} parser
+     * @param {String | Symbol} id
      */
-    static group(parser) {
-        return new Regexer(new CapturingGroupParser(parser.getParser()))
+    static group(parser, id = "") {
+        return new Regexer(new CapturingGroupParser(parser.getParser(), id))
     }
 
     /**
@@ -204,6 +205,9 @@ export default class RegExpGrammar {
         // Non capturing group
         R.seq(R.string("(?:"), R.lazy(() => this.regexp), R.string(")"))
             .map(([l, value, r]) => R.nonCapturingGroup(value)),
+        // Named capturing group
+        R.seq(R.string("(?<"), R.regexp(/\w+/), R.string(">"), R.lazy(() => this.regexp), R.string(")"))
+            .map(([l, name, _, value, r]) => R.group(value, name)),
         // Positive lookahead
         R.seq(R.string("(?="), R.lazy(() => this.regexp), R.string(")"))
             .map(([l, value, r]) => R.lookaround(value, LookaroundParser.Type.POSITIVE_AHEAD)),

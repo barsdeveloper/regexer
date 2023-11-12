@@ -6,7 +6,6 @@ import ClassParser from "../parser/ClassParser.js"
 import ClassShorthandParser, { ClassMetacharacter } from "../parser/ClassShorthandParser.js"
 import EscapedCharParser from "../parser/EscapedCharParser.js"
 import LookaroundParser from "../parser/LookaroundParser.js"
-import NegativeParser from "../parser/NegativeParser.js"
 import NonCapturingGroupParser from "../parser/NonCapturingGroupParser.js"
 import Parser from "../parser/Parser.js"
 import Regexer from "../Regexer.js"
@@ -35,7 +34,17 @@ export const R = class extends Regexer {
      */
     static class(...parsers) {
         // @ts-expect-error
-        return new Regexer(new ClassParser(...parsers.map(p => p.getParser())))
+        return new Regexer(new ClassParser(false, ...parsers.map(p => p.getParser())))
+    }
+
+    /**
+     * @template {Regexer<any>[]} P
+     * @param {P} parsers
+     * @returns {Regexer<ClassParser<UnwrapParser<P>>>}
+     */
+    static negClass(...parsers) {
+        // @ts-expect-error
+        return new Regexer(new ClassParser(true, ...parsers.map(p => p.getParser())))
     }
 
     /**
@@ -51,7 +60,7 @@ export const R = class extends Regexer {
      * @param {T} parser
      * @param {String | Symbol} id
      */
-    static group(parser, id = "") {
+    static grp(parser, id = "") {
         return new Regexer(new CapturingGroupParser(parser.getParser(), id))
     }
 
@@ -59,7 +68,7 @@ export const R = class extends Regexer {
      * @template {Regexer<Parser<any>>} T
      * @param {T} parser
      */
-    static nonCapturingGroup(parser) {
+    static nonGrp(parser) {
         return new Regexer(new NonCapturingGroupParser(parser.getParser()))
     }
 
@@ -67,16 +76,8 @@ export const R = class extends Regexer {
      * @template {Regexer<Parser<any>>} T
      * @param {T} parser
      */
-    static atomicGroup(parser) {
+    static atomicGrp(parser) {
         return new Regexer(new AtomicGroupParser(parser.getParser()))
-    }
-
-    /**
-     * @template {Regexer<Parser<any>>} T
-     * @param {T} parser
-     */
-    static negative(parser) {
-        return new Regexer(new NegativeParser(parser.getParser()))
     }
 
     static lineStart() {
@@ -91,8 +92,8 @@ export const R = class extends Regexer {
         return new Regexer(new AnchorParser(AnchorType.WORD_BOUNDARY))
     }
 
-    static anyChar() {
-        return new Regexer(new AnyCharParser())
+    static anyChar(dotAll = false) {
+        return new Regexer(new AnyCharParser(dotAll))
     }
 
     /**
@@ -117,23 +118,23 @@ export default class RegExpGrammar {
     static #hexDigit = R.regexp(/[0-9A-Fa-f]/)
 
     static #anchor = R.alt(
-        R.string("^").map(() => R.lineStart()),
-        R.string("$").map(() => R.lineEnd()),
-        R.string("\\b").map(() => R.wordBoundary()),
+        R.str("^").map(() => R.lineStart()),
+        R.str("$").map(() => R.lineEnd()),
+        R.str("\\b").map(() => R.wordBoundary()),
     )
 
     static #escapedHexChar = R.seq(
-        R.string("\\"),
+        R.str("\\"),
         R.alt(
-            R.seq(R.string("x").map(() => EscapedCharParser.Type.HEX), this.#hexDigit.times(2)),
-            R.seq(R.string("u").map(() => EscapedCharParser.Type.UNICODE), this.#hexDigit.times(4)),
-            R.seq(R.string("u{").map(() => EscapedCharParser.Type.UNICODE_FULL), this.#hexDigit.times(4, 5), R.string("}")),
+            R.seq(R.str("x").map(() => EscapedCharParser.Type.HEX), this.#hexDigit.times(2)),
+            R.seq(R.str("u").map(() => EscapedCharParser.Type.UNICODE), this.#hexDigit.times(4)),
+            R.seq(R.str("u{").map(() => EscapedCharParser.Type.UNICODE_FULL), this.#hexDigit.times(4, 5), R.str("}")),
         )
     ).map(([_0, [type, hexValues, _3]]) =>
         R.escapedChar(String.fromCodePoint(Number(`0x${hexValues.join("")}`)), type)
     )
 
-    static #escapedCharLiteral = R.seq(R.string("\\"), R.regexp(/./).assert(v => v != 'x')).map(([_, c]) =>
+    static #escapedCharLiteral = R.seq(R.str("\\"), R.regexp(/./).assert(v => v != 'x')).map(([_, c]) =>
         ClassMetacharacter[c]
             // @ts-expect-error
             ? R.classShorthand(c)
@@ -144,14 +145,14 @@ export default class RegExpGrammar {
 
     static #classCharLiteral = R.regexp(/./)
         .assert(c => !["]", "\\"].includes(c))
-        .map(c => R.string(c))
+        .map(c => R.str(c))
 
     static #nonClassCharLiteral = R.regexp(/./)
         .assert(c => !["^", "$", "*", "+", "?", ".", "(", ")", "[", "\\", "|"].includes(c))
-        .map(c => R.string(c))
+        .map(c => R.str(c))
 
     static #nonClassCharacter = R.alt(
-        R.string(".").map(() => R.anyChar()),
+        R.str(".").map(() => R.anyChar()),
         this.#nonClassCharLiteral,
         this.#nonClassEscapedChar,
     )
@@ -168,61 +169,61 @@ export default class RegExpGrammar {
         this.#escapedCharLiteral.assert(v => !(v.getParser() instanceof ClassShorthandParser)),
     )
 
-    static #range = R.seq(this.#rangeEndpoint, R.string("-"), this.#rangeEndpoint)
+    static #range = R.seq(this.#rangeEndpoint, R.str("-"), this.#rangeEndpoint)
         .map(([from, _, to]) => R.range(from, to))
 
     static #class = R.seq(
-        R.string("["),
-        R.string("^").opt(),
+        R.str("["),
+        R.str("^").opt(),
         R.alt(this.#range, this.#classChar).atLeast(1),
-        R.string("]")
+        R.str("]")
     ).map(([l, invert, values, r]) =>
-        invert ? R.negative(R.class(...values)) : R.class(...values)
+        invert ? R.negClass(...values) : R.class(...values)
     )
 
 
     static #quantifier = R.alt(
         R.seq(
-            R.string("{"),
+            R.str("{"),
             this.#decimalNumber.map(v => Number(v)),
-            R.seq(R.string(","), this.#decimalNumber.map(v => Number(v)).opt()).opt(),
-            R.string("}"),
+            R.seq(R.str(","), this.#decimalNumber.map(v => Number(v)).opt()).opt(),
+            R.str("}"),
         ).map(([lp, from, maxTimes, rp]) => /** @param {Regexer<Parser<any>>} p */ p => p.times(
             from,
             maxTimes
                 ? maxTimes[1] ? maxTimes[1] : Number.POSITIVE_INFINITY
                 : from
         )),
-        R.string("+").map(() => /** @param {Regexer<Parser<any>>} p */ p => p.atLeast(1)),
-        R.string("?").map(() => /** @param {Regexer<Parser<any>>} p */ p => p.opt()),
-        R.string("*").map(() => /** @param {Regexer<Parser<any>>} p */ p => p.many()),
+        R.str("+").map(() => /** @param {Regexer<Parser<any>>} p */ p => p.atLeast(1)),
+        R.str("?").map(() => /** @param {Regexer<Parser<any>>} p */ p => p.opt()),
+        R.str("*").map(() => /** @param {Regexer<Parser<any>>} p */ p => p.many()),
     )
 
     static #subExpression = R.alt(
         // Capturing group
-        R.seq(R.string("("), R.lazy(() => this.regexp), R.string(")"))
-            .map(([l, value, r]) => R.group(value)),
+        R.seq(R.str("("), R.lazy(() => this.regexp), R.str(")"))
+            .map(([l, value, r]) => R.grp(value)),
         // Non capturing group
-        R.seq(R.string("(?:"), R.lazy(() => this.regexp), R.string(")"))
-            .map(([l, value, r]) => R.nonCapturingGroup(value)),
+        R.seq(R.str("(?:"), R.lazy(() => this.regexp), R.str(")"))
+            .map(([l, value, r]) => R.nonGrp(value)),
         // Named capturing group
-        R.seq(R.string("(?<"), R.regexp(/\w+/), R.string(">"), R.lazy(() => this.regexp), R.string(")"))
-            .map(([l, name, _, value, r]) => R.group(value, name)),
+        R.seq(R.str("(?<"), R.regexp(/\w+/), R.str(">"), R.lazy(() => this.regexp), R.str(")"))
+            .map(([l, name, _, value, r]) => R.grp(value, name)),
         // Positive lookahead
-        R.seq(R.string("(?="), R.lazy(() => this.regexp), R.string(")"))
+        R.seq(R.str("(?="), R.lazy(() => this.regexp), R.str(")"))
             .map(([l, value, r]) => R.lookaround(value, LookaroundParser.Type.POSITIVE_AHEAD)),
         // Negative lookahead
-        R.seq(R.string("(?!"), R.lazy(() => this.regexp), R.string(")"))
+        R.seq(R.str("(?!"), R.lazy(() => this.regexp), R.str(")"))
             .map(([l, value, r]) => R.lookaround(value, LookaroundParser.Type.NEGATIVE_AHEAD)),
         // Positive lookbehind
-        R.seq(R.string("(?<="), R.lazy(() => this.regexp), R.string(")"))
+        R.seq(R.str("(?<="), R.lazy(() => this.regexp), R.str(")"))
             .map(([l, value, r]) => R.lookaround(value, LookaroundParser.Type.POSITIVE_BEHIND)),
         // Negative lookbehind
-        R.seq(R.string("(?<!"), R.lazy(() => this.regexp), R.string(")"))
+        R.seq(R.str("(?<!"), R.lazy(() => this.regexp), R.str(")"))
             .map(([l, value, r]) => R.lookaround(value, LookaroundParser.Type.NEGATIVE_BEHIND)),
         // Atomic group
-        R.seq(R.string("(?>"), R.lazy(() => this.regexp), R.string(")"))
-            .map(([l, value, r]) => R.atomicGroup(value)),
+        R.seq(R.str("(?>"), R.lazy(() => this.regexp), R.str(")"))
+            .map(([l, value, r]) => R.atomicGrp(value)),
     )
 
     static #expression = R.alt(
@@ -240,7 +241,7 @@ export default class RegExpGrammar {
                 const current = cur.getParser()
                 if (last?.constructor === StringParser && current?.constructor === StringParser) {
                     // @ts-expect-error
-                    acc[acc.length - 1] = R.string(last.value + current.value)
+                    acc[acc.length - 1] = R.str(last.value + current.value)
                 } else {
                     acc.push(cur)
                 }
@@ -259,7 +260,7 @@ export default class RegExpGrammar {
 
     static #alternation = R.seq(
         this.#sequence,
-        R.seq(R.string("|"), this.#sequence).map(([pipe, seq]) => seq).many()
+        R.seq(R.str("|"), this.#sequence).map(([pipe, seq]) => seq).many()
     ).map(([first, rest]) => rest.length === 0 ? first : R.alt(first, ...rest))
 
     /** @type {Regexer<Parser<Regexer<Parser<any>>>>} */

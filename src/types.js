@@ -12,6 +12,11 @@
 
 /**
  * @template T
+ * @typedef {new (...args: any) => T} ConstructorType
+ */
+
+/**
+ * @template T
  * @typedef {import("./Regexer.js").default<T>} Regexer
  */
 
@@ -42,7 +47,6 @@
  *     : T extends import("./parser/AlternativeParser.js").default<infer P> ? UnionFromArray<ParserValue<P>>
  *     : T extends import("./parser/LazyParser.js").default<infer P> ? ParserValue<P>
  *     : T extends import("./parser/RegExpParser.js").default<any> ? String
- *     : T extends import("./parser/NegativeParser.js").default<any> ? ""
  *     : T extends import("./parser/Parser.js").default<infer V> ? V
  *     : T extends import("./parser/LookaroundParser.js/index.js").LookaroundParser ? ""
  *     : never

@@ -81,6 +81,6 @@ export default class MapParser extends Parser {
         if (serializedMapper.length > 80 || serializedMapper.includes("\n")) {
             serializedMapper = "( ... ) => { ... }"
         }
-        return this.#parser.toString(indent) + ` => map<${serializedMapper}>`
+        return this.#parser.toString(indent) + ` -> map<${serializedMapper}>`
     }
 }

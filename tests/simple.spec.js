@@ -4,7 +4,7 @@ import Regexer from "../src/Regexer.js"
 const R = Regexer
 
 test("String alpha", async ({ page }) => {
-    const p = R.string("alpha")
+    const p = R.str("alpha")
     expect(p.parse("alpha")).toEqual("alpha")
     expect(() => p.parse("Alpha")).toThrowError()
     expect(() => p.parse("alphaa")).toThrowError()
@@ -16,7 +16,7 @@ test("String alpha", async ({ page }) => {
 })
 
 test("String beta", async ({ page }) => {
-    const p = R.string("beta")
+    const p = R.str("beta")
     expect(p.parse("beta")).toEqual("beta")
     expect(() => p.parse("Beta")).toThrowError()
     expect(() => p.parse("betaa")).toThrowError()
@@ -102,7 +102,7 @@ test("Double quoted string", async ({ page }) => {
 })
 
 test("Sequence: alpha, beta", async ({ page }) => {
-    const p = R.seq(R.string("alpha"), R.string("beta"))
+    const p = R.seq(R.str("alpha"), R.str("beta"))
     expect(p.parse("alphabeta")).toEqual(["alpha", "beta"])
     expect(() => p.parse(" alphabeta")).toThrowError()
     expect(() => p.parse("alpha beta")).toThrowError()
@@ -112,15 +112,15 @@ test("Sequence: alpha, beta", async ({ page }) => {
 
 test("Sequence regex and strings", async ({ page }) => {
     const p = R.seq(
-        R.string("("),
+        R.str("("),
         R.optWhitespace,
         R.number,
         R.optWhitespace,
-        R.string(","),
+        R.str(","),
         R.optWhitespace,
         R.number,
         R.optWhitespace,
-        R.string(")")
+        R.str(")")
     )
     expect(p.parse("(1,1)")).toEqual(["(", "", 1, "", ",", "", 1, "", ")"])
     expect(p.parse("( +10.4, -9 )")).toEqual(["(", " ", 10.4, "", ",", " ", -9, " ", ")"])
@@ -128,7 +128,7 @@ test("Sequence regex and strings", async ({ page }) => {
 })
 
 test("Alternative", async ({ page }) => {
-    const p = R.alt(R.string("first"), R.string("second"), R.string("third"))
+    const p = R.alt(R.str("first"), R.str("second"), R.str("third"))
     expect(p.parse("first")).toEqual("first")
     expect(p.parse("second")).toEqual("second")
     expect(p.parse("third")).toEqual("third")
@@ -136,14 +136,14 @@ test("Alternative", async ({ page }) => {
 })
 
 test("Optional", async ({ page }) => {
-    const p = R.seq(R.string("a"), R.string("b").opt(), R.string("c")).join()
+    const p = R.seq(R.str("a"), R.str("b").opt(), R.str("c")).join()
     expect(p.parse("abc")).toEqual("abc")
     expect(p.parse("ac")).toEqual("ac")
     expect(() => p.parse("acd")).toThrowError()
 })
 
 test("Many", async ({ page }) => {
-    const p = R.string("a").many()
+    const p = R.str("a").many()
     expect(p.parse("")).toEqual([])
     expect(p.parse("a")).toEqual(["a"])
     expect(p.parse("aa")).toEqual(["a", "a"])
@@ -155,7 +155,7 @@ test("Many", async ({ page }) => {
 })
 
 test("Times", async ({ page }) => {
-    const p = R.string("alpha").times(2)
+    const p = R.str("alpha").times(2)
     expect(p.parse("alphaalpha")).toEqual(["alpha", "alpha"])
     expect(() => p.parse("alpha")).toThrowError()
     expect(() => p.parse("alphaalphaalpha")).toThrowError()
@@ -163,7 +163,7 @@ test("Times", async ({ page }) => {
 })
 
 test("At least", async ({ page }) => {
-    const p = R.seq(R.number, R.string(", ")).atLeast(2)
+    const p = R.seq(R.number, R.str(", ")).atLeast(2)
     expect(p.parse("1, 2, 3, 4, 5, ")).toEqual([[1, ", "], [2, ", "], [3, ", "], [4, ", "], [5, ", "]])
     expect(p.parse("-100, 2.5, ")).toEqual([[-100, ", "], [2.5, ", "]])
     expect(() => p.parse("-100, ")).toThrowError()
@@ -171,7 +171,7 @@ test("At least", async ({ page }) => {
 })
 
 test("At most", async ({ page }) => {
-    const p = R.seq(R.number, R.string(", ")).atMost(2)
+    const p = R.seq(R.number, R.str(", ")).atMost(2)
     expect(p.parse("")).toEqual([])
     expect(p.parse("10, ")).toEqual([[10, ", "]])
     expect(p.parse("10, 20, ")).toEqual([[10, ", "], [20, ", "]])
@@ -179,7 +179,7 @@ test("At most", async ({ page }) => {
 })
 
 test("Map", async ({ page }) => {
-    const p = R.string("Hello").map(v => "World")
+    const p = R.str("Hello").map(v => "World")
     expect(p.parse("Hello")).toEqual("World")
     expect(() => p.parse("hello")).toThrowError()
 })
@@ -200,8 +200,8 @@ test("Number regex mapped", async ({ page }) => {
 
 test("Join", async ({ page }) => {
     const p = R.seq(
-        R.string("a").join(), // Joining this has no effect
-        R.string("b")
+        R.str("a").join(), // Joining this has no effect
+        R.str("b")
     )
         .join() // Seq returns an array, joining it means concatenating the string it contains
         .many().join() // many returns an array, joining it means concatenating the string it contains
@@ -216,9 +216,9 @@ test("Join", async ({ page }) => {
 test("Chain", async ({ page }) => {
     const p = R.regexp(/\w+ /).chain(v => {
         switch (v) {
-            case "first ": return R.string("second")
-            case "alpha ": return R.string("beta")
-            case "a ": return R.string("b")
+            case "first ": return R.str("second")
+            case "alpha ": return R.str("beta")
+            case "a ": return R.str("b")
         }
     })
     expect(p.parse("first second")).toEqual("second")
@@ -236,27 +236,27 @@ test("Assert", async ({ page }) => {
 })
 
 test("Lookahead", async ({ page }) => {
-    const p = R.seq(R.number, R.lookahead(R.string(" end")), R.string(" end")).map(([number, end]) => number)
+    const p = R.seq(R.number, R.lookahead(R.str(" end")), R.str(" end")).map(([number, end]) => number)
     expect(p.parse("123 end")).toEqual(123)
     expect(p.parse("-10 end")).toEqual(-10)
     expect(() => p.parse("begin word")).toThrowError()
 })
 
 test("Lazy", async ({ page }) => {
-    const p = R.lazy(() => R.string("alpha"))
+    const p = R.lazy(() => R.str("alpha"))
     expect(p.parse("alpha")).toEqual("alpha")
     expect(() => p.parse("beta")).toThrowError()
 })
 
 test("Skip space", async ({ page }) => {
-    const p = R.seq(R.string("a").skipSpace(), R.string("b"))
+    const p = R.seq(R.str("a").skipSpace(), R.str("b"))
     expect(p.parse("ab")).toEqual(["a", "b"])
     expect(p.parse("a    b")).toEqual(["a", "b"])
     expect(() => p.parse("aba")).toThrowError()
 })
 
 test("Separated by", async ({ page }) => {
-    const p = R.string("a").sepBy(R.regexp(/\s*,\s*/))
+    const p = R.str("a").sepBy(R.regexp(/\s*,\s*/))
     expect(p.parse("a,  a  ,  a")).toEqual(["a", "a", "a"])
     expect(p.parse("a  ,  a")).toEqual(["a", "a"])
     expect(p.parse("a")).toEqual(["a"])

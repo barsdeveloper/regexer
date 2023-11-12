@@ -69,7 +69,7 @@ test("Json", async ({ page, browser }) => {
     })
 })
 
-test("Json remote", async ({ page, browser }) => {
+test("Json remote (no internet => fails)", async ({ page, browser }) => {
     const obj = await page.evaluate(async () => {
         // The following file must be available, otherwise the test will fail
         const response = await fetch("https://raw.githubusercontent.com/barsdeveloper/regexer/master/tests/sample3.json")
@@ -83,60 +83,60 @@ test("RegExp", async ({ page }) => {
     const g = RegExpGrammar.regexp
     expect(R.equals(
         g.parse(/a/.source),
-        R.string("a"),
+        R.str("a"),
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/ab/.source),
-        R.string("ab"),
+        R.str("ab"),
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/a|b/.source),
-        R.alt(R.string("a"), R.string("b")),
+        R.alt(R.str("a"), R.str("b")),
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/|||a/.source),
-        R.alt(R.success(), R.success(), R.success(), R.string("a")),
+        R.alt(R.success(), R.success(), R.success(), R.str("a")),
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/a||/.source),
-        R.alt(R.string("a"), R.success(), R.success()),
+        R.alt(R.str("a"), R.success(), R.success()),
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/||a||/.source),
-        R.alt(R.success(), R.success(), R.string("a"), R.success(), R.success()),
+        R.alt(R.success(), R.success(), R.str("a"), R.success(), R.success()),
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/(abc)/.source),
-        R.group(R.string("abc")))).toBeTruthy()
+        R.grp(R.str("abc")))).toBeTruthy()
     expect(R.equals(
         g.parse(/(?:a(b)c)/.source),
-        R.nonCapturingGroup(
-            R.seq(R.string("a"), R.group(R.string("b")), R.string("c"))
+        R.nonGrp(
+            R.seq(R.str("a"), R.grp(R.str("b")), R.str("c"))
         ))).toBeTruthy()
     expect(R.equals(
         g.parse("(?>alpha|beta)"),
-        R.atomicGroup(
-            R.alt(R.string("alpha"), R.string("beta"))
+        R.atomicGrp(
+            R.alt(R.str("alpha"), R.str("beta"))
         ))).toBeTruthy()
     expect(R.equals(
         g.parse(/[abc]/.source),
-        R.class(R.string("a"), R.string("b"), R.string("c")))).toBeTruthy()
+        R.class(R.str("a"), R.str("b"), R.str("c")))).toBeTruthy()
     expect(R.equals(
         g.parse(/[(a)(b)c]/.source),
         R.class(
-            R.string("("),
-            R.string("a"),
-            R.string(")"),
-            R.string("("),
-            R.string("b"),
-            R.string(")"),
-            R.string("c"),
+            R.str("("),
+            R.str("a"),
+            R.str(")"),
+            R.str("("),
+            R.str("b"),
+            R.str(")"),
+            R.str("c"),
         ))).toBeTruthy()
     expect(R.equals(
         g.parse(/[\a-zA-\Z\[\]]/.source),
         R.class(
-            R.range(R.escapedChar("a"), R.string("z")),
-            R.range(R.string("A"), R.escapedChar("Z")),
+            R.range(R.escapedChar("a"), R.str("z")),
+            R.range(R.str("A"), R.escapedChar("Z")),
             R.escapedChar("["),
             R.escapedChar("]"),
         ))).toBeTruthy()
@@ -148,32 +148,31 @@ test("RegExp", async ({ page }) => {
         R.class(R.classShorthand("d")))).toBeTruthy()
     expect(R.equals(
         g.parse(/[^^\x64ab\s]/.source),
-        R.negative(
-            R.class(
-                R.string("^"),
-                R.escapedChar(String.fromCodePoint(0x64), EscapedCharParser.Type.HEX),
-                R.string("a"),
-                R.string("b"),
-                R.classShorthand("s"),
-            )
-        ))).toBeTruthy()
+        R.negClass(
+            R.str("^"),
+            R.escapedChar(String.fromCodePoint(0x64), EscapedCharParser.Type.HEX),
+            R.str("a"),
+            R.str("b"),
+            R.classShorthand("s"),
+        )
+    )).toBeTruthy()
     expect(R.equals(
         g.parse(/\b\||^a$|[\b]/.source),
         R.alt(
             R.seq(R.wordBoundary(), R.escapedChar("|")),
-            R.seq(R.lineStart(), R.string("a"), R.lineEnd()),
+            R.seq(R.lineStart(), R.str("a"), R.lineEnd()),
             R.class(R.escapedChar("\b")),
         ))).toBeTruthy()
     expect(R.equals(
         g.parse(/a+/.source),
-        R.string("a").atLeast(1))).toBeTruthy()
+        R.str("a").atLeast(1))).toBeTruthy()
     expect(R.equals(
         g.parse(/(?:alpha){2,}beta{1}|^$/.source),
         R.alt(
             R.seq(
-                R.nonCapturingGroup(R.string("alpha")).atLeast(2),
-                R.string("bet"),
-                R.string("a").times(1),
+                R.nonGrp(R.str("alpha")).atLeast(2),
+                R.str("bet"),
+                R.str("a").times(1),
             ),
             R.seq(R.lineStart(), R.lineEnd())
         ))).toBeTruthy()
@@ -181,15 +180,15 @@ test("RegExp", async ({ page }) => {
         g.parse(/\f{,2}/.source),
         R.seq(
             R.escapedChar("\f"),
-            R.string("{,1}"), // Becomes characters because not a correct quantifier
+            R.str("{,1}"), // Becomes characters because not a correct quantifier
         )))
     expect(R.equals(
         g.parse(/\0{,2}\\0?\?{3,}\./.source),
         R.seq(
             R.escapedChar("\0"),
-            R.string("{,2}"),
+            R.str("{,2}"),
             R.escapedChar("\\"),
-            R.string("0").opt(),
+            R.str("0").opt(),
             R.escapedChar("?").atLeast(3),
             R.escapedChar("."),
         ))).toBeTruthy()
@@ -263,40 +262,40 @@ test("RegExp complex 1", async ({ page }) => {
         )
     `.replaceAll(/\s+/g, "")
     const g = RegExpGrammar.regexp
-    const alpha = R.range(R.string("a"), R.string("z"))
-    const digit = R.range(R.string("0"), R.string("9"))
-    const alphaDigitClass = R.class(R.range(R.string("a"), R.string("z")), R.range(R.string("0"), R.string("9")))
+    const alpha = R.range(R.str("a"), R.str("z"))
+    const digit = R.range(R.str("0"), R.str("9"))
+    const alphaDigitClass = R.class(R.range(R.str("a"), R.str("z")), R.range(R.str("0"), R.str("9")))
     const mainClass = R.class(
         alpha,
         digit,
-        R.string("!"),
-        R.string("#"),
-        R.string("$"),
-        R.string("%"),
-        R.string("&"),
-        R.string("'"),
-        R.string("*"),
-        R.string("+"),
-        R.string("/"),
-        R.string("="),
-        R.string("?"),
-        R.string("^"),
-        R.string("_"),
-        R.string("`"),
-        R.string("{"),
-        R.string("|"),
-        R.string("}"),
-        R.string("~"),
-        R.string("-"),
+        R.str("!"),
+        R.str("#"),
+        R.str("$"),
+        R.str("%"),
+        R.str("&"),
+        R.str("'"),
+        R.str("*"),
+        R.str("+"),
+        R.str("/"),
+        R.str("="),
+        R.str("?"),
+        R.str("^"),
+        R.str("_"),
+        R.str("`"),
+        R.str("{"),
+        R.str("|"),
+        R.str("}"),
+        R.str("~"),
+        R.str("-"),
     )
     expect(R.equals(
         g.parse(regexpSource),
         R.seq(
-            R.nonCapturingGroup(
+            R.nonGrp(
                 R.alt(
                     R.seq(
                         mainClass.atLeast(1),
-                        R.nonCapturingGroup(
+                        R.nonGrp(
                             R.seq(
                                 R.escapedChar("."),
                                 mainClass.atLeast(1),
@@ -304,8 +303,8 @@ test("RegExp complex 1", async ({ page }) => {
                         ).many()
                     ),
                     R.seq(
-                        R.string('"'),
-                        R.nonCapturingGroup(
+                        R.str('"'),
+                        R.nonGrp(
                             R.alt(
                                 R.class(
                                     R.range(R.escapedChar("\x01", EscapedCharParser.Type.HEX), R.escapedChar("\x08", EscapedCharParser.Type.HEX)),
@@ -327,20 +326,20 @@ test("RegExp complex 1", async ({ page }) => {
                                 ),
                             )
                         ).many(),
-                        R.string('"'),
+                        R.str('"'),
                     ),
                 )
             ),
-            R.string("@"),
-            R.nonCapturingGroup(
+            R.str("@"),
+            R.nonGrp(
                 R.alt(
                     R.seq(
-                        R.nonCapturingGroup(
+                        R.nonGrp(
                             R.seq(
                                 alphaDigitClass,
-                                R.nonCapturingGroup(
+                                R.nonGrp(
                                     R.seq(
-                                        R.class(alpha, digit, R.string("-")).many(),
+                                        R.class(alpha, digit, R.str("-")).many(),
                                         alphaDigitClass
                                     )
                                 ).opt(),
@@ -348,30 +347,30 @@ test("RegExp complex 1", async ({ page }) => {
                             )
                         ).atLeast(1),
                         alphaDigitClass,
-                        R.nonCapturingGroup(
+                        R.nonGrp(
                             R.seq(
-                                R.class(alpha, digit, R.string("-")).many(),
+                                R.class(alpha, digit, R.str("-")).many(),
                                 alphaDigitClass
                             )
                         ).opt()
                     ),
                     R.seq(
                         R.escapedChar("["),
-                        R.nonCapturingGroup(
+                        R.nonGrp(
                             R.seq(
-                                R.nonCapturingGroup(
+                                R.nonGrp(
                                     R.alt(
                                         R.seq(
-                                            R.string("25"),
-                                            R.class(R.range(R.string("0"), R.string("5"))),
+                                            R.str("25"),
+                                            R.class(R.range(R.str("0"), R.str("5"))),
                                         ),
                                         R.seq(
-                                            R.string("2"),
-                                            R.class(R.range(R.string("0"), R.string("4"))),
+                                            R.str("2"),
+                                            R.class(R.range(R.str("0"), R.str("4"))),
                                             R.class(digit),
                                         ),
                                         R.seq(
-                                            R.class(R.string("0"), R.string("1")).opt(),
+                                            R.class(R.str("0"), R.str("1")).opt(),
                                             R.class(digit),
                                             R.class(digit).opt(),
                                         ),
@@ -380,16 +379,16 @@ test("RegExp complex 1", async ({ page }) => {
                                 R.escapedChar("."),
                             )
                         ).times(3),
-                        R.nonCapturingGroup(
+                        R.nonGrp(
                             R.alt(
-                                R.seq(R.string("25"), R.class(R.range(R.string("0"), R.string("5")))),
-                                R.seq(R.string("2"), R.class(R.range(R.string("0"), R.string("4"))), R.class(digit)),
-                                R.seq(R.class(R.string("0"), R.string("1")).opt(), R.class(digit), R.class(digit).opt()),
+                                R.seq(R.str("25"), R.class(R.range(R.str("0"), R.str("5")))),
+                                R.seq(R.str("2"), R.class(R.range(R.str("0"), R.str("4"))), R.class(digit)),
+                                R.seq(R.class(R.str("0"), R.str("1")).opt(), R.class(digit), R.class(digit).opt()),
                                 R.seq(
-                                    R.class(alpha, digit, R.string("-")).many(),
+                                    R.class(alpha, digit, R.str("-")).many(),
                                     alphaDigitClass,
-                                    R.string(":"),
-                                    R.nonCapturingGroup(
+                                    R.str(":"),
+                                    R.nonGrp(
                                         R.alt(
                                             R.class(
                                                 R.range(R.escapedChar("\x01", EscapedCharParser.Type.HEX), R.escapedChar("\x08", EscapedCharParser.Type.HEX)),
@@ -459,33 +458,33 @@ test("RegExp complex 2", async ({ page }) => {
         R.alt(
             R.seq(
                 R.lineStart(),
-                R.group(
+                R.grp(
                     R.seq(
-                        R.group(R.alt(R.string("a"), R.string("b"))),
-                        R.class(R.range(R.string("0"), R.string("9"))).times(2, 4),
-                        R.lookahead(R.class(R.range(R.string("A"), R.string("Z")))),
+                        R.grp(R.alt(R.str("a"), R.str("b"))),
+                        R.class(R.range(R.str("0"), R.str("9"))).times(2, 4),
+                        R.lookahead(R.class(R.range(R.str("A"), R.str("Z")))),
                         R.lookaround(R.classShorthand("d"), LookaroundParser.Type.POSITIVE_BEHIND),
-                        R.group(
+                        R.grp(
                             R.alt(
                                 R.classShorthand("s"),
                                 R.classShorthand("S"),
                             )
                         ),
                         R.escapedChar("\u{1F601}", EscapedCharParser.Type.UNICODE_FULL),
-                        R.string("-"),
+                        R.str("-"),
                         R.escapedChar("\u{1F64F}", EscapedCharParser.Type.UNICODE_FULL),
                     )
                 )
             ),
-            R.group(
+            R.grp(
                 R.seq(
                     R.classShorthand("d").times(3, 5),
-                    R.negative(R.class(R.classShorthand("w"), R.classShorthand("d"))),
+                    R.negClass(R.classShorthand("w"), R.classShorthand("d")),
                     R.lookaround(R.classShorthand("D"), LookaroundParser.Type.POSITIVE_BEHIND),
                     R.classShorthand("s").many(),
-                    R.nonCapturingGroup(
+                    R.nonGrp(
                         R.seq(
-                            R.class(R.range(R.string("A"), R.string("Z")), R.range(R.string("a"), R.string("z"))).times(2),
+                            R.class(R.range(R.str("A"), R.str("Z")), R.range(R.str("a"), R.str("z"))).times(2),
                             R.classShorthand("s").many()
                         )
                     ).times(1, 3)
@@ -522,8 +521,8 @@ test("RegExp complex 3", async ({ page }) => {
         g.parse(regexpSource),
         R.seq(
             R.lookahead(
-                R.group(
-                    R.seq(R.anyChar().many(), R.class(R.range(R.string("0"), R.string("9"))))
+                R.grp(
+                    R.seq(R.anyChar().many(), R.class(R.range(R.str("0"), R.str("9"))))
                 )
             ),
             R.lookahead(
@@ -531,50 +530,50 @@ test("RegExp complex 3", async ({ page }) => {
                     R.anyChar().many(),
                     R.class(
                         R.escapedChar("!"),
-                        R.string("@"),
-                        R.string("#"),
-                        R.string("$"),
-                        R.string("%"),
-                        R.string("^"),
-                        R.string("&"),
-                        R.string("*"),
-                        R.string("("),
-                        R.string(")"),
+                        R.str("@"),
+                        R.str("#"),
+                        R.str("$"),
+                        R.str("%"),
+                        R.str("^"),
+                        R.str("&"),
+                        R.str("*"),
+                        R.str("("),
+                        R.str(")"),
                         R.escapedChar("\\"),
-                        R.string("["),
+                        R.str("["),
                         R.escapedChar("]"),
-                        R.string("{"),
-                        R.string("}"),
+                        R.str("{"),
+                        R.str("}"),
                         R.escapedChar("-"),
-                        R.string("_"),
-                        R.string("+"),
-                        R.string("="),
-                        R.string("~"),
-                        R.string("`"),
-                        R.string("|"),
-                        R.string(":"),
-                        R.string(";"),
-                        R.string('"'),
-                        R.string("'"),
-                        R.string("<"),
-                        R.string(">"),
-                        R.string(","),
-                        R.string("."),
-                        R.string("/"),
-                        R.string("?"),
+                        R.str("_"),
+                        R.str("+"),
+                        R.str("="),
+                        R.str("~"),
+                        R.str("`"),
+                        R.str("|"),
+                        R.str(":"),
+                        R.str(";"),
+                        R.str('"'),
+                        R.str("'"),
+                        R.str("<"),
+                        R.str(">"),
+                        R.str(","),
+                        R.str("."),
+                        R.str("/"),
+                        R.str("?"),
                     )
                 )
             ),
             R.lookahead(
-                R.seq(R.anyChar().many(), R.class(R.range(R.string("a"), R.string("z"))))
+                R.seq(R.anyChar().many(), R.class(R.range(R.str("a"), R.str("z"))))
             ),
             R.lookahead(
-                R.group(
-                    R.seq(R.anyChar().many(), R.class(R.range(R.string("A"), R.string("Z"))))
+                R.grp(
+                    R.seq(R.anyChar().many(), R.class(R.range(R.str("A"), R.str("Z"))))
                 )
             ),
             R.lookahead(
-                R.group(R.anyChar().many())
+                R.grp(R.anyChar().many())
             ),
             R.anyChar().atLeast(8)
         ))).toBeTruthy()

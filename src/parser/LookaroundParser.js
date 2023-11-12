@@ -40,7 +40,10 @@ export default class LookaroundParser extends Parser {
      * @param {Number} position
      */
     parse(context, position) {
-        if (this.#type === LookaroundParser.Type.NEGATIVE_BEHIND || this.#type === LookaroundParser.Type.POSITIVE_BEHIND) {
+        if (
+            this.#type === LookaroundParser.Type.NEGATIVE_BEHIND
+            || this.#type === LookaroundParser.Type.POSITIVE_BEHIND
+        ) {
             throw new Error("Lookbehind is not implemented yet")
         } else {
             const result = this.#parser.parse(context, position)

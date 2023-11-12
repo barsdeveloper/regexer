@@ -18,9 +18,21 @@ export default class Parser {
         })
     }
 
+    /**
+     * In an alternative, this would always match parser could might
+     * @param {Parser<any>} parser
+     */
+    dominates(parser) {
+        return this.equals(parser, false)
+    }
+
     /** @returns {Parser<Value>} */
     unwrap() {
         return null
+    }
+
+    canStartWith() {
+
     }
 
     /**
@@ -30,10 +42,6 @@ export default class Parser {
      */
     wrap(parser) {
         throw new Error("Not implemented")
-    }
-
-    startsWith() {
-        return ""
     }
 
     /**

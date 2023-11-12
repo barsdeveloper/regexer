@@ -40,27 +40,27 @@ export default class MathGrammar {
         R.seq(
             R.optWhitespace,
             R.alt(
-                R.string("^").map(() => ({
+                R.str("^").map(() => ({
                     precedence: 20,
                     rightAssociative: true,
                     function: (a, b) => Math.pow(a, b),
                 })),
-                R.string("*").map(() => ({
+                R.str("*").map(() => ({
                     precedence: 10,
                     rightAssociative: false,
                     function: (a, b) => a * b,
                 })),
-                R.string("/").map(() => ({
+                R.str("/").map(() => ({
                     precedence: 10,
                     rightAssociative: false,
                     function: (a, b) => a / b,
                 })),
-                R.string("+").map(() => ({
+                R.str("+").map(() => ({
                     precedence: 0,
                     rightAssociative: false,
                     function: (a, b) => a + b,
                 })),
-                R.string("-").map(() => ({
+                R.str("-").map(() => ({
                     precedence: 0,
                     rightAssociative: false,
                     function: (a, b) => a - b,
@@ -78,11 +78,11 @@ export default class MathGrammar {
         R.alt(
             MathGrammar.#number.map(v => [v]),
             R.seq(
-                R.string("("),
+                R.str("("),
                 R.optWhitespace,
                 R.lazy(() => MathGrammar.expressionFragment),
                 R.optWhitespace,
-                R.string(")"),
+                R.str(")"),
             ).map(([_0, _1, entries]) => [this.#evaluate(entries)])
         ))
 

@@ -14,38 +14,38 @@ test("Inline 1", ({ page }) => {
     expect(R.equals(
         inlineParsers.transform(
             R.alt(
-                R.group(
-                    R.group(
-                        R.string("a"),
+                R.grp(
+                    R.grp(
+                        R.str("a"),
                         "alpha"
                     ).map(f1),
                     "bravo"
                 ),
-                R.string("b"),
+                R.str("b"),
                 R.alt(
-                    R.group(
+                    R.grp(
                         R.alt(
-                            R.string("c"),
-                            R.string("d"),
-                            R.string("e"),
+                            R.str("c"),
+                            R.str("d"),
+                            R.str("e"),
                         ).map(f2),
                         "charlie"
                     ).map(f3),
-                    R.string("f").map(f1),
+                    R.str("f").map(f1),
                     R.alt(
-                        R.string("g"),
-                        R.group(
+                        R.str("g"),
+                        R.grp(
                             R.alt(
-                                R.string("h").map(f1).map(f2).map(f3),
-                                R.group(R.string("i"), "delta"),
-                                R.string("j"),
+                                R.str("h").map(f1).map(f2).map(f3),
+                                R.grp(R.str("i"), "delta"),
+                                R.str("j"),
                                 R.alt(
-                                    R.string("k"),
+                                    R.str("k"),
                                     R.alt(
-                                        R.string("l"),
-                                        R.string("m").map(f2),
+                                        R.str("l"),
+                                        R.str("m").map(f2),
                                     ),
-                                    R.string("n"),
+                                    R.str("n"),
                                 ),
                             ).map(f3),
                             "echo"
@@ -55,20 +55,20 @@ test("Inline 1", ({ page }) => {
             )
         ),
         R.alt(
-            R.group(R.group(R.string("a"), "alpha").map(f1), "bravo"),
-            R.string("b"),
-            R.group(R.string("c").map(f2), "charlie").map(f3).map(f1),
-            R.group(R.string("d").map(f2), "charlie").map(f3).map(f1),
-            R.group(R.string("e").map(f2), "charlie").map(f3).map(f1),
-            R.string("f").map(f1).map(f1),
-            R.string("g").map(f1),
-            R.group(R.string("h").map(f1).map(f2).map(f3).map(f3), "echo").map(f1),
-            R.group(R.group(R.string("i"), "delta").map(f3), "echo").map(f1),
-            R.group(R.string("j").map(f3), "echo").map(f1),
-            R.group(R.string("k").map(f3), "echo").map(f1),
-            R.group(R.string("l").map(f3), "echo").map(f1),
-            R.group(R.string("m").map(f2).map(f3), "echo").map(f1),
-            R.group(R.string("n").map(f3), "echo").map(f1),
+            R.grp(R.grp(R.str("a"), "alpha").map(f1), "bravo"),
+            R.str("b"),
+            R.grp(R.str("c").map(f2), "charlie").map(f3).map(f1),
+            R.grp(R.str("d").map(f2), "charlie").map(f3).map(f1),
+            R.grp(R.str("e").map(f2), "charlie").map(f3).map(f1),
+            R.str("f").map(f1).map(f1),
+            R.str("g").map(f1),
+            R.grp(R.str("h").map(f1).map(f2).map(f3).map(f3), "echo").map(f1),
+            R.grp(R.grp(R.str("i"), "delta").map(f3), "echo").map(f1),
+            R.grp(R.str("j").map(f3), "echo").map(f1),
+            R.grp(R.str("k").map(f3), "echo").map(f1),
+            R.grp(R.str("l").map(f3), "echo").map(f1),
+            R.grp(R.str("m").map(f2).map(f3), "echo").map(f1),
+            R.grp(R.str("n").map(f3), "echo").map(f1),
         ),
         true
     )).toBeTruthy()
@@ -78,104 +78,100 @@ test("Inline 2", ({ page }) => {
     const inlineParsers = new InlineParsers()
     expect(R.equals(
         inlineParsers.transform(
-            R.nonCapturingGroup(
-                R.negative(
-                    R.group(
-                        R.seq(
-                            R.string("1").map(f1),
-                            R.lazy(() => R.string("2")),
-                            R.success(),
-                            R.group(
-                                R.seq(
-                                    R.alt(
-                                        R.string("a"),
-                                        R.alt(
-                                            RegExpGrammar.regexp.parse(/(?<alpha>(?<bravo>[bcd]))/.source).map(f3),
-                                            R.string("e"),
-                                        ).map(f2),
-                                    ),
-                                    R.group(
-                                        R.group(
-                                            R.seq(
-                                                R.group(R.group(R.string("3"), "charlie").map(f2), "delta")
-                                            ).map(f3),
-                                            "echo"
-                                        ).map(f1),
-                                        "foxtrot"
-                                    ).map(f2),
-                                    R.seq(
-                                        R.string("4"),
-                                        R.string("5").map(f2).map(f1),
-                                        R.group(R.string("6"), "golf"),
-                                    ).map(f3)
-                                ).map(f2),
-                                "hotel"
-                            ),
-                            R.alt(
-                                R.nonCapturingGroup(
-                                    R.lazy(() => RegExpGrammar.regexp.parse(/london|paris|madrid|milan/.source))
-                                )
-                            )
-                        ).map(f1),
-                        "india"
-                    )
-                )
-            )
-        ),
-        R.nonCapturingGroup(
-            R.negative(
-                R.group(
+            R.nonGrp(
+                R.grp(
                     R.seq(
-                        R.string("1").map(f1),
-                        R.string("2"),
+                        R.str("1").map(f1),
+                        R.lazy(() => R.str("2")),
                         R.success(),
-                        R.group(
-                            R.alt(
-                                R.string("a"),
-                                R.group(R.group(R.string("b"), "bravo"), "alpha").map(f3).map(f2),
-                                R.group(R.group(R.string("c"), "bravo"), "alpha").map(f3).map(f2),
-                                R.group(R.group(R.string("d"), "bravo"), "alpha").map(f3).map(f2),
-                                R.string("e").map(f2),
+                        R.grp(
+                            R.seq(
+                                R.alt(
+                                    R.str("a"),
+                                    R.alt(
+                                        RegExpGrammar.regexp.parse(/(?<alpha>(?<bravo>[bcd]))/.source).map(f3),
+                                        R.str("e"),
+                                    ).map(f2),
+                                ),
+                                R.grp(
+                                    R.grp(
+                                        R.seq(
+                                            R.grp(R.grp(R.str("3"), "charlie").map(f2), "delta")
+                                        ).map(f3),
+                                        "echo"
+                                    ).map(f1),
+                                    "foxtrot"
+                                ).map(f2),
+                                R.seq(
+                                    R.str("4"),
+                                    R.str("5").map(f2).map(f1),
+                                    R.grp(R.str("6"), "golf"),
+                                ).map(f3)
                             ).map(f2),
                             "hotel"
                         ),
-                        R.group(
-                            R.group(
-                                R.group(
-                                    R.group(
-                                        R.group(
-                                            R.string("3"),
-                                            "charlie"
-                                        ).map(f2),
-                                        "delta"
-                                    ).map(f3),
-                                    "echo"
-                                ).map(f1),
-                                "foxtrot"
-                            ).map(f2).map(f2),
-                            "hotel"
-                        ),
-                        R.group(
-                            R.string("4").map(f3).map(f2),
-                            "hotel"
-                        ),
-                        R.group(
-                            R.string("5").map(f2).map(f1).map(f3).map(f2),
-                            "hotel"
-                        ),
-                        R.group(
-                            R.group(R.string("6"), "golf").map(f3).map(f2),
-                            "hotel"
-                        ),
                         R.alt(
-                            R.nonCapturingGroup(R.string("london")),
-                            R.nonCapturingGroup(R.string("paris")),
-                            R.nonCapturingGroup(R.string("madrid")),
-                            R.nonCapturingGroup(R.string("milan")),
+                            R.nonGrp(
+                                R.lazy(() => RegExpGrammar.regexp.parse(/london|paris|madrid|milan/.source))
+                            )
                         )
                     ).map(f1),
                     "india"
                 )
+            )
+        ),
+        R.nonGrp(
+            R.grp(
+                R.seq(
+                    R.str("1").map(f1),
+                    R.str("2"),
+                    R.success(),
+                    R.grp(
+                        R.alt(
+                            R.str("a"),
+                            R.grp(R.grp(R.str("b"), "bravo"), "alpha").map(f3).map(f2),
+                            R.grp(R.grp(R.str("c"), "bravo"), "alpha").map(f3).map(f2),
+                            R.grp(R.grp(R.str("d"), "bravo"), "alpha").map(f3).map(f2),
+                            R.str("e").map(f2),
+                        ).map(f2),
+                        "hotel"
+                    ),
+                    R.grp(
+                        R.grp(
+                            R.grp(
+                                R.grp(
+                                    R.grp(
+                                        R.str("3"),
+                                        "charlie"
+                                    ).map(f2),
+                                    "delta"
+                                ).map(f3),
+                                "echo"
+                            ).map(f1),
+                            "foxtrot"
+                        ).map(f2).map(f2),
+                        "hotel"
+                    ),
+                    R.grp(
+                        R.str("4").map(f3).map(f2),
+                        "hotel"
+                    ),
+                    R.grp(
+                        R.str("5").map(f2).map(f1).map(f3).map(f2),
+                        "hotel"
+                    ),
+                    R.grp(
+                        R.grp(R.str("6"), "golf").map(f3).map(f2),
+                        "hotel"
+                    ),
+                    R.alt(
+                        R.nonGrp(R.str("london")),
+                        R.nonGrp(R.str("paris")),
+                        R.nonGrp(R.str("madrid")),
+                        R.nonGrp(R.str("milan")),
+                    )
+                ).map(f1),
+                "india"
             )
         ),
         true
@@ -186,15 +182,15 @@ test("Test 1", ({ page }) => {
     expect(R.equals(
         transformer.transform(
             R.alt(
-                R.string("a"),
-                R.string("b"),
+                R.str("a"),
+                R.str("b"),
                 R.success(),
-                R.string("c"),
-                R.string("d"),
-                R.string("e")
+                R.str("c"),
+                R.str("d"),
+                R.str("e")
             )
         ),
-        R.alt(R.string("a"), R.string("b"), R.success()),
+        R.alt(R.str("a"), R.str("b"), R.success()),
         true,
     )).toBeTruthy()
 })
@@ -203,19 +199,19 @@ test("Test 2", ({ page }) => {
     expect(R.equals(
         transformer.transform(
             R.alt(
-                R.string("a"),
+                R.str("a"),
                 R.failure(),
-                R.string("b"),
+                R.str("b"),
                 R.failure(),
-                R.string("c").map(f1),
+                R.str("c").map(f1),
                 R.success().map(f2).map(f3),
-                R.string("d"),
-                R.string("e")
+                R.str("d"),
+                R.str("e")
             )),
         R.alt(
-            R.string("a"),
-            R.string("b"),
-            R.string("c").map(f1),
+            R.str("a"),
+            R.str("b"),
+            R.str("c").map(f1),
             R.success().map(f2).map(f3)
         ),
         true,
@@ -226,19 +222,19 @@ test("Test 3", ({ page }) => {
     expect(R.equals(
         transformer.transform(
             R.alt(
-                R.string("a"),
+                R.str("a"),
                 R.alt(
-                    R.string("b").map(f3),
-                    R.string("c"),
+                    R.str("b").map(f3),
+                    R.str("c"),
                     R.success().map(f1)
                 ).map(f2).map(f1),
-                R.string("d")
+                R.str("d")
             )
         ),
         R.alt(
-            R.string("a"),
-            R.string("b").map(f3).map(f2).map(f1),
-            R.string("c").map(f2).map(f1),
+            R.str("a"),
+            R.str("b").map(f3).map(f2).map(f1),
+            R.str("c").map(f2).map(f1),
             R.success().map(f1).map(f2).map(f1)
         ),
         true,

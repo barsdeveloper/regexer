@@ -18,8 +18,30 @@ class Parser {
         })
     }
 
-    startsWith() {
-        return ""
+    /**
+     * In an alternative, this would always match parser could might
+     * @param {Parser<any>} parser
+     */
+    dominates(parser) {
+        return this.equals(parser, false)
+    }
+
+    /** @returns {Parser<Value>} */
+    unwrap() {
+        return null
+    }
+
+    canStartWith() {
+
+    }
+
+    /**
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @returns {Parser<Value>}
+     */
+    wrap(parser) {
+        throw new Error("Not implemented")
     }
 
     /**
@@ -32,12 +54,14 @@ class Parser {
     }
 
     /** @returns {Parser<any>} */
-    actualParser() {
+    actualParser(ignoreGroup = false) {
         return this
     }
 
     /** @returns {Parser<any>} */
     withActualParser(other) {
+        const unwrapped = other.unwrap();
+        if (unwrapped)
         return other
     }
 
@@ -166,8 +190,8 @@ class AlternativeParser extends Parser {
 }
 
 /**
- * @template {Parser<any>} P
- * @template {(v: ParserValue<P>, input: String, position: Number) => Regexer<Parser<any>>} C
+ * @template {Parser<any>} T
+ * @template {(v: ParserValue<T>, input: String, position: Number) => Regexer<Parser<any>>} C
  * @extends Parser<ReturnType<C>>
  */
 class ChainedParser extends Parser {
@@ -180,13 +204,25 @@ class ChainedParser extends Parser {
     #fn
 
     /**
-     * @param {P} parser
+     * @param {T} parser
      * @param {C} chained
      */
     constructor(parser, chained) {
         super();
         this.#parser = parser;
         this.#fn = chained;
+    }
+
+    unwrap() {
+        return this.#parser
+    }
+
+    /**
+     * @template {Parser<ParserValue<T>>} P
+     * @param {P} parser
+     */
+    wrap(parser) {
+        return new ChainedParser(parser, this.#fn)
     }
 
     /**
@@ -259,10 +295,23 @@ class LazyParser extends Parser {
         return this.#resolvedPraser
     }
 
-    actualParser() {
-        return this.resolve().actualParser()
+    unwrap() {
+        return this.resolve()
     }
 
+    /**
+     * @template {Parser<any>} P
+     * @param {P} parser
+     */
+    wrap(parser) {
+        const regexerConstructor = this.#parser().constructor;
+        // @ts-expect-error
+        return new LazyParser(() => new regexerConstructor(parser))
+    }
+
+    actualParser(ignoreGroup = false) {
+        return this.resolve().actualParser(ignoreGroup)
+    }
 
     /** @returns {Parser<any>} */
     withActualParser(other) {
@@ -285,8 +334,16 @@ class LazyParser extends Parser {
      * @param {Boolean} strict
      */
     equals(other, strict) {
+        if (other instanceof LazyParser && this.#parser === other.#parser) {
+            return true
+        }
         this.resolve();
-        return this.#resolvedPraser.equals(other, strict)
+        if (!strict) {
+            other = other.actualParser();
+        } else if (other instanceof LazyParser) {
+            other = other.resolve();
+        }
+        return this.#resolvedPraser === other || this.#resolvedPraser.equals(other, strict)
     }
 
     toString(indent = 0) {
@@ -333,7 +390,10 @@ class LookaroundParser extends Parser {
      * @param {Number} position
      */
     parse(context, position) {
-        if (this.#type === LookaroundParser.Type.NEGATIVE_BEHIND || this.#type === LookaroundParser.Type.POSITIVE_BEHIND) {
+        if (
+            this.#type === LookaroundParser.Type.NEGATIVE_BEHIND
+            || this.#type === LookaroundParser.Type.POSITIVE_BEHIND
+        ) {
             throw new Error("Lookbehind is not implemented yet")
         } else {
             const result = this.#parser.parse(context, position);
@@ -389,8 +449,17 @@ class MapParser extends Parser {
         this.#mapper = mapper;
     }
 
-    actualParser() {
-        return this.#parser.actualParser()
+    unwrap() {
+        return this.#parser
+    }
+
+    /** @param {Parser<any>} parser */
+    wrap(parser) {
+        return new MapParser(parser, this.#mapper)
+    }
+
+    actualParser(ignoreGroup = false) {
+        return this.#parser.actualParser(ignoreGroup)
     }
 
     /** @returns {Parser<any>} */
@@ -433,7 +502,7 @@ class MapParser extends Parser {
         if (serializedMapper.length > 80 || serializedMapper.includes("\n")) {
             serializedMapper = "( ... ) => { ... }";
         }
-        return this.#parser.toString(indent) + ` => map<${serializedMapper}>`
+        return this.#parser.toString(indent) + ` -> map<${serializedMapper}>`
     }
 }
 
@@ -586,6 +655,18 @@ class StringParser extends Parser {
     constructor(value) {
         super();
         this.#value = value;
+    }
+
+    /**
+     * In an alternative, this would always match parser could might
+     * @param {Parser<any>} parser
+     */
+    dominates(parser) {
+        parser = parser.actualParser();
+        if (parser instanceof StringParser) {
+            const otherValue = /** @type {String} */(parser.#value);
+            return otherValue.startsWith(this.#value)
+        }
     }
 
     /**
@@ -743,9 +824,12 @@ class Regexer {
 
     #parser
     #optimized
+    #groups = new Map()
 
     static #numberTransformer = v => Number(v)
+    /** @param {[any, ...any]|RegExpExecArray} param0 */
     static #firstElementGetter = ([v, _]) => v
+    /** @param {[any, any, ...any]|RegExpExecArray} param0 */
     static #secondElementGetter = ([_, v]) => v
     static #arrayFlatter = ([first, rest]) => [first, ...rest]
     static #joiner =
@@ -850,7 +934,7 @@ class Regexer {
      * @template {String} S
      * @param {S} value
      */
-    static string(value) {
+    static str(value) {
         return new Regexer(new StringParser(value))
     }
 

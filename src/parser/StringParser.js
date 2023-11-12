@@ -19,6 +19,18 @@ export default class StringParser extends Parser {
     }
 
     /**
+     * In an alternative, this would always match parser could might
+     * @param {Parser<any>} parser
+     */
+    dominates(parser) {
+        parser = parser.actualParser()
+        if (parser instanceof StringParser) {
+            const otherValue = /** @type {String} */(parser.#value)
+            return otherValue.startsWith(this.#value)
+        }
+    }
+
+    /**
      * @param {Context} context
      * @param {Number} position
      */

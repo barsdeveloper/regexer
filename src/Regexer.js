@@ -20,7 +20,9 @@ export default class Regexer {
     #groups = new Map()
 
     static #numberTransformer = v => Number(v)
+    /** @param {[any, ...any]|RegExpExecArray} param0 */
     static #firstElementGetter = ([v, _]) => v
+    /** @param {[any, any, ...any]|RegExpExecArray} param0 */
     static #secondElementGetter = ([_, v]) => v
     static #arrayFlatter = ([first, rest]) => [first, ...rest]
     static #joiner =
@@ -125,7 +127,7 @@ export default class Regexer {
      * @template {String} S
      * @param {S} value
      */
-    static string(value) {
+    static str(value) {
         return new Regexer(new StringParser(value))
     }
 

@@ -5,9 +5,9 @@ const R = Regexer
 
 export default class JsonGrammar {
 
-    static #null = R.string("null").map(() => null)
-    static #true = R.string("true").map(() => true)
-    static #false = R.string("false").map(() => false)
+    static #null = R.str("null").map(() => null)
+    static #true = R.str("true").map(() => true)
+    static #false = R.str("false").map(() => false)
     static #string = R.doubleQuotedString
     static #number = R.numberExponential.map(v => Number(v))
     /** @type {Regexer<Parser<any[]>>} */

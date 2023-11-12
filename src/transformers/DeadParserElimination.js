@@ -1,8 +1,6 @@
 import AlternativeParser from "../parser/AlternativeParser.js"
 import FailureParser from "../parser/FailureParser.js"
-import LookaroundParser from "../parser/LookaroundParser.js"
 import MapParser from "../parser/MapParser.js"
-import NegativeParser from "../parser/NegativeParser.js"
 import SequenceParser from "../parser/SequenceParser.js"
 import SuccessParser from "../parser/SuccessParser.js"
 import Transformer from "./Transformer.js"
@@ -67,45 +65,6 @@ export default class DeadParserElimination extends Transformer {
 
         if (parser instanceof MapParser && removeMapParsers) {
             return this.doTransform(parser.parser, true)
-        }
-
-        if (parser instanceof NegativeParser) {
-            /** @type {Parser<any>} */
-            let immediate = parser.parser
-            let actual = immediate.actualParser()
-            const collect = result => actual !== immediate
-                ? immediate.withActualParser(result)
-                : result
-
-            if (actual instanceof NegativeParser) {
-                return this.doTransform(actual.parser, true)
-            }
-
-            if (actual instanceof SuccessParser) {
-                return collect(new FailureParser())
-            }
-
-            if (actual instanceof FailureParser) {
-                return collect(new SuccessParser(""))
-            }
-
-            if (actual instanceof LookaroundParser) {
-                const create = type => collect(new LookaroundParser(
-                    // @ts-expect-error
-                    this.doTransform(actual.parser, true),
-                    type
-                ))
-                switch (actual.type) {
-                    case LookaroundParser.Type.NEGATIVE_AHEAD:
-                        return create(LookaroundParser.Type.POSITIVE_AHEAD)
-                    case LookaroundParser.Type.NEGATIVE_BEHIND:
-                        return create(LookaroundParser.Type.POSITIVE_BEHIND)
-                    case LookaroundParser.Type.POSITIVE_AHEAD:
-                        return create(LookaroundParser.Type.NEGATIVE_AHEAD)
-                    case LookaroundParser.Type.POSITIVE_BEHIND:
-                        return create(LookaroundParser.Type.NEGATIVE_BEHIND)
-                }
-            }
         }
 
         if (parser instanceof SequenceParser) {

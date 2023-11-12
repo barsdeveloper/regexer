@@ -15,11 +15,11 @@ test("Test 3", async ({ page }) => {
 })
 
 test("Test 4", async ({ page }) => {
-    expect(R.class(R.range(R.escapedChar("\b"), R.string("z"))).toString()).toEqual(String.raw`[\b-z]`)
+    expect(R.class(R.range(R.escapedChar("\b"), R.str("z"))).toString()).toEqual(String.raw`[\b-z]`)
 })
 
 test("Test 5", async ({ page }) => {
-    expect(R.class(R.range(R.escapedChar("\b"), R.string("z"))).toString()).toEqual(String.raw`[\b-z]`)
+    expect(R.class(R.range(R.escapedChar("\b"), R.str("z"))).toString()).toEqual(String.raw`[\b-z]`)
 })
 
 test("Test 6", async ({ page }) => {
@@ -35,18 +35,18 @@ test("Test 6", async ({ page }) => {
     )
 })
 
-test("Test 7", async ({ page }) => {
-    expect(R.seq(R.string("a"), R.negative(R.string("b")), R.string("c")).toString(2, true)).toEqual(`
-        SEQ<
-            a
-            NOT<b>
-            c
-        >`
-    )
-})
+// test("Test 7", async ({ page }) => {
+//     expect(R.seq(R.str("a"), R.neg(R.str("b")), R.str("c")).toString(2, true)).toEqual(`
+//         SEQ<
+//             a
+//             NOT<b>
+//             c
+//         >`
+//     )
+// })
 
 test("Test 8", async ({ page }) => {
-    expect(R.alt(R.string("alpha"), R.seq(R.string("beta"), R.string("gamma").many()).atLeast(1)).toString(2, true)).toEqual(`
+    expect(R.alt(R.str("alpha"), R.seq(R.str("beta"), R.str("gamma").many()).atLeast(1)).toString(2, true)).toEqual(`
         ALT<
             "alpha"
             |

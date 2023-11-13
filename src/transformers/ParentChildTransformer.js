@@ -1,23 +1,23 @@
 import Transformer from "./Transformer.js"
 
 /**
- * @template {Parser<any>} ParentT
- * @template {Parser<any>} ChildT
+ * @template {[Parser<any>, ...Parser<any>[]]} ParentTypes
+ * @template {[Parser<any>, ...Parser<any>[]]} ChildTypes
  */
 export default class ParentChildTransformer extends Transformer {
 
-    #parentType
-    #childType
+    #parentTypes
+    #childTypes
 
     /**
-     * @param {new (...args: any) => ParentT} parentType
-     * @param {new (...args: any) => ChildT} childType
+     * @param {ConstructorsFromArrayTypes<ParentTypes>} parentTypes
+     * @param {ConstructorsFromArrayTypes<ChildTypes>} childTypes
      */
-    constructor(parentType, childType) {
+    constructor(parentTypes, childTypes) {
         super()
-        this.#parentType = parentType
-        this.#childType = childType
-        this.opaque = [...this.opaque, this.#parentType]
+        this.#parentTypes = parentTypes
+        this.#childTypes = childTypes
+        this.opaque = [...this.opaque, ...this.#parentTypes, ...this.#childTypes]
     }
 
     /**
@@ -26,19 +26,30 @@ export default class ParentChildTransformer extends Transformer {
      * @return {Parser<T>}
      */
     doTransform(parser) {
-        if (parser instanceof this.#parentType) {
+        let unwrapped = parser.unwrap()
+        if (this.#parentTypes.find(t => parser instanceof t)) {
             const child = parser.unwrap().actualParser(this.traverse, this.opaque)
-            if (child instanceof this.#childType) {
-                let replacement = this.doTransformParentChild(parser, child)
+            if (this.#childTypes.find(t => child instanceof t)) {
+                let replacement = this.doTransformParentChild(
+                    /** @type {UnionFromArray<ParentTypes>} */(parser),
+                    /** @type {UnionFromArray<ChildTypes>} */(child)
+                )
                 return replacement
+            }
+            unwrapped = child.unwrap()
+        }
+        if (unwrapped) {
+            const transformed = this.doTransform(unwrapped)
+            if (transformed !== unwrapped) {
+                return parser.wrap(transformed)
             }
         }
         return parser
     }
 
     /**
-     * @param {ParentT} parent
-     * @param {ChildT} child
+     * @param {UnionFromArray<ParentTypes>} parent
+     * @param {UnionFromArray<ChildTypes>} child
      * @returns {Parser<any>}
      */
     doTransformParentChild(parent, child) {

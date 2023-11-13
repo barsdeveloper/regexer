@@ -63,6 +63,8 @@ export default class RegExpParser extends Parser {
         if (!strict) {
             other = other.actualParser()
         }
-        return other instanceof RegExpParser && this.#regexp.source === other.#regexp.source
+        return other instanceof RegExpParser
+            && (!strict || this.#group === other.#group)
+            && this.#regexp.source === other.#regexp.source
     }
 }

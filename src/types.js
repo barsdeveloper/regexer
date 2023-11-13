@@ -29,6 +29,14 @@
  **/
 
 /**
+ * @template T
+ * @typedef {T extends [infer A] ? new (...args: any) => A
+ *     : T extends [infer A, ...infer B] ? [new (...args: any) => A, ...ConstructorsFromArrayTypes<B>]
+ *     : any
+ * } ConstructorsFromArrayTypes
+ **/
+
+/**
  * @typedef {{
  *     input: String,
  *     parser: Regexer,

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test"
 import DeadParserElimination from "../src/transformers/DeadParserElimination.js"
 import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
+import LookaroundParser from "../src/parser/LookaroundParser.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
 
@@ -9,6 +10,7 @@ const transformer = new DeadParserElimination()
 const f1 = v => "f1"
 const f2 = v => "f2"
 const f3 = v => "f3"
+const fp = v => R.str("a string")
 
 test("Inline parsers 1", ({ page }) => {
     const inlineParsers = new InlineParsersTransformer()
@@ -179,7 +181,7 @@ test("Inline parsers 2", ({ page }) => {
     )).toBeTruthy()
 })
 
-test("Remove discarded map", ({ page }) => {
+test("Remove discarded map 1", ({ page }) => {
     const removeDiscardedMap = new RemoveDiscardedMapTransformer()
     expect(
         R.equals(
@@ -189,7 +191,51 @@ test("Remove discarded map", ({ page }) => {
             R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta")))),
             true
         )
-    ).toBeTruthy
+    ).toBeTruthy()
+})
+
+test("Remove discarded map 2", ({ page }) => {
+    const removeDiscardedMap = new RemoveDiscardedMapTransformer()
+    expect(
+        R.equals(
+            transformer.transform(
+                R.grp(R.alt(
+                    R.seq(
+                        R.lookahead(R.nonGrp(R.str("Ireland").map(f1))).map(f2),
+                        R.nonGrp(R.grp(
+                            R.lookaround(R.grp(R.str("Germany")).map(f3), LookaroundParser.Type.NEGATIVE_AHEAD)
+                        )),
+                        R.lookahead(
+                            R.lazy(() => R.grp(R.str("Italy"), "first").map(f1))
+                                .chain(fp)
+                                .map(f3)
+                        ).map(f2)
+                    ).map(f2),
+                    R.class(R.str("a")),
+                    R.anyChar(),
+                    R.optWhitespace,
+                    R.lookaround(R.lazy(() => R.grp(R.lazy(() => R.number), "second").map(f1)))
+                ))
+            ),
+            R.grp(R.alt(
+                R.seq(
+                    R.lookahead(R.nonGrp(R.str("Ireland"))),
+                    R.nonGrp(R.grp(
+                        R.lookaround(R.grp(R.str("Germany")), LookaroundParser.Type.NEGATIVE_AHEAD)
+                    )),
+                    R.lookahead(
+                        R.lazy(() => R.grp(R.str("Italy"), "first").map(f1))
+                            .chain(fp)
+                    ).map(f2)
+                ).map(f2),
+                R.class(R.str("a")),
+                R.anyChar(),
+                R.optWhitespace,
+                R.lookaround(R.lazy(() => R.grp(R.lazy(() => R.number), "second").map(f1)))
+            )),
+            true
+        )
+    ).toBeTruthy()
 })
 
 // test("Test 1", ({ page }) => {

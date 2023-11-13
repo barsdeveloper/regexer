@@ -1,17 +1,18 @@
 import LookaroundParser from "../parser/LookaroundParser.js"
 import MapParser from "../parser/MapParser.js"
+import StringParser from "../parser/StringParser.js"
 import ParentChildTransformer from "./ParentChildTransformer.js"
 
-/** @extends ParentChildTransformer<LookaroundParser<Parser<any>>, MapParser<Parser<any>>> */
+/** @extends {ParentChildTransformer<[LookaroundParser, MapParser], [LookaroundParser, MapParser]>} */
 export default class RemoveDiscardedMapTransformer extends ParentChildTransformer {
 
     constructor() {
-        super(LookaroundParser, MapParser)
+        super([LookaroundParser, MapParser], [LookaroundParser, MapParser])
     }
 
     /**
-     * @param {LookaroundParser<Parser<any>>} parent
-     * @param {MapParser<Parser<any>>} child
+     * @param {LookaroundParser | MapParser} parent
+     * @param {LookaroundParser | MapParser} child
      * @returns {Parser<any>}
      */
     doTransformParentChild(parent, child) {

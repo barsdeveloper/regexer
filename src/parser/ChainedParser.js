@@ -51,6 +51,19 @@ export default class ChainedParser extends Parser {
         return result
     }
 
+    /**
+     * @param {Parser<any>} other
+     * @param {Boolean} strict
+     */
+    equals(other, strict) {
+        if (!strict) {
+            other = other.actualParser()
+        }
+        return other instanceof ChainedParser
+            && this.#fn === other.#fn
+            && this.#parser.equals(other.parser, strict)
+    }
+
     toString(indent = 0) {
         return this.#parser.toString(indent) + " => chained<f()>"
     }

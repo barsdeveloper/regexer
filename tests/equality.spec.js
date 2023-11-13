@@ -11,6 +11,8 @@ const f2 = v => v.trim()
 /** @param {String} v */
 const f3 = v => v.trimStart()
 
+const fp = v => R.optWhitespace
+
 test("Test 1", async ({ page }) => {
     expect(
         R.equals(
@@ -26,7 +28,7 @@ test("Test 1", async ({ page }) => {
     ).toBeTruthy()
     expect(
         R.equals(
-            R.nonGrp(R.str("a").map(x => x.charAt(0))).map(x => x.trimEnd()),
+            R.nonGrp(/*******/R.str("a").map(x => x.charAt(0))).map(x => x.trimEnd()),
             R.nonGrp(R.nonGrp(R.str("a"))),
         )
     ).toBeTruthy()
@@ -56,7 +58,7 @@ test("Test 1", async ({ page }) => {
     ).toBeTruthy()
     expect(
         R.equals(
-            R.str("a"),
+            /**********/R.str("a"),
             R.atomicGrp(R.str("a").map(x => x.concat("aaa"))),
         )
     ).toBeFalsy()
@@ -77,7 +79,7 @@ test("Test 1", async ({ page }) => {
     expect(
         R.equals(
             R.atomicGrp(R.str("a")).map(f1),
-            R.str("a").map(f1),
+            /**********/R.str("a").map(f1),
             true,
         )
     ).toBeFalsy()
@@ -117,15 +119,49 @@ test("Test 2", async ({ page }) => {
 })
 
 test("Test 3", async ({ page }) => {
+    expect(R.equals(
+        R.str("a").chain(fp),
+        R.str("a").map(f1),
+        true
+    )).toBeFalsy()
+    expect(R.equals(
+        R.str("a").chain(fp),
+        R.str("a").map(f1).chain(fp)
+    )).toBeTruthy()
+    expect(R.equals(
+        R.str("a").chain(fp),
+        R.str("a").chain(fp),
+        true
+    )).toBeTruthy()
+})
+
+test("Test 4", async ({ page }) => {
+    expect(R.equals(
+        R.regexpGroups(/a(b)c/),
+        R.lazy(() => R.regexp(/a(b)c/))
+    )).toBeTruthy()
+    expect(R.equals(
+        R.lazy(() => R.regexp(/a(b)c/, 1)).map(f2),
+        R.lazy(() => R.regexp(/a(b)c/, 1)).map(f2),
+        true
+    )).toBeTruthy()
+    expect(R.equals(
+        R.lazy(() => R.regexp(/a(b)c/, 0)).map(f2),
+        R.lazy(() => R.regexp(/a(b)c/, 1)).map(f2),
+        true
+    )).toBeFalsy()
+})
+
+test("Test 5", async ({ page }) => {
     const lhs = R.seq(R.number, R.nonGrp(R.whitespaceInline), R.alt(R.str("a").map(v => 123), R.str("b")))
-    const rhs = R.seq(R.number, /******************/ R.whitespaceInline, R.alt(R.str("a"), /***********/ R.str("b")))
+    const rhs = R.seq(R.number, /*******/ R.whitespaceInline, R.alt(R.str("a"), /***********/ R.str("b")))
     expect(R.equals(lhs, rhs)).toBeTruthy()
     expect(R.equals(rhs, lhs)).toBeTruthy()
     expect(R.equals(lhs, rhs, true)).toBeFalsy()
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 })
 
-test("Test 4", async ({ page }) => {
+test("Test 6", async ({ page }) => {
     const lhs = R.seq(R.number, R.number, R.alt(R.str("a"), R.str("b")))
     const rhs = R.seq(R.number, R.number, R.alt(R.str("b"), R.str("a")))
     expect(R.equals(lhs, rhs)).toBeFalsy()
@@ -134,10 +170,9 @@ test("Test 4", async ({ page }) => {
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 })
 
-test("Test 5", async ({ page }) => {
+test("Test 7", async ({ page }) => {
     const lhs = R.alt(
-        R.str("a").map(() => "alpha")
-            .many(),
+        R.str("a").map(() => "alpha").many(),
         R.lazy(() => R.seq(
             R.str("b").map(v => 123).opt(),
             R.lookahead(R.str("c")),
@@ -146,8 +181,7 @@ test("Test 5", async ({ page }) => {
     )
         .many()
     const rhs = R.alt(
-        R.str("a")
-            .many(),
+        R.str("a").many(),
         R.seq(
             R.str("b").map(v => v).opt(),
             R.lookahead(R.str("c")),
@@ -161,7 +195,7 @@ test("Test 5", async ({ page }) => {
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 })
 
-test("Test 6", async ({ page }) => {
+test("Test 8", async ({ page }) => {
     const lhs = R.alt(R.regexp(/\s*[a-z]/).skipSpace(), R.grp(R.str("alpha").map(f2).opt().map(f1))).sepBy(R.str(","))
     const rhs = R.alt(R.regexp(/\s*[a-z]/).skipSpace(), R.grp(R.str("alpha").map(f2).opt().map(f1))).sepBy(R.str(","))
     expect(R.equals(lhs, rhs)).toBeTruthy()
@@ -170,7 +204,7 @@ test("Test 6", async ({ page }) => {
     expect(R.equals(rhs, lhs, true)).toBeTruthy()
 })
 
-test("Test 7", async ({ page }) => {
+test("Test 9", async ({ page }) => {
     const lhs = R.seq(
         R.grp(R.class(
             R.escapedChar("\b"),
@@ -200,7 +234,7 @@ test("Test 7", async ({ page }) => {
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 })
 
-test("Test 8", async ({ page }) => {
+test("Test 10", async ({ page }) => {
     const lhs = R.seq(
         R.regexp(/(Paris|Milan|Amsterdam)/),
         R.alt(
@@ -221,48 +255,109 @@ test("Test 8", async ({ page }) => {
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 })
 
-test("Test 9", async ({ page }) => {
+test("Test 11", async ({ page }) => {
     /** @type {Regexer<Parser<any>>} */
     let lhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
     /** @type {Regexer<Parser<any>>} */
     let rhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
-    expect(R.equals(lhs, rhs, false)).toBeTruthy()
-    expect(R.equals(rhs, lhs, false)).toBeTruthy()
+    expect(R.equals(lhs, rhs)).toBeTruthy()
+    expect(R.equals(rhs, lhs)).toBeTruthy()
     expect(R.equals(lhs, rhs, true)).toBeTruthy()
     expect(R.equals(rhs, lhs, true)).toBeTruthy()
 
     lhs = R.class(R.str("0"), R.str("1"), R.str("2"))
     rhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
-    expect(R.equals(lhs, rhs, false)).toBeTruthy()
-    expect(R.equals(rhs, lhs, false)).toBeTruthy()
+    expect(R.equals(lhs, rhs)).toBeTruthy()
+    expect(R.equals(rhs, lhs)).toBeTruthy()
     expect(R.equals(lhs, rhs, true)).toBeFalsy()
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 
     lhs = R.class(R.str("0"), R.str("1"), R.str("2"))
     rhs = R.class(R.str("0"), R.str("1"), R.str("2"))
-    expect(R.equals(lhs, rhs, false)).toBeTruthy()
-    expect(R.equals(rhs, lhs, false)).toBeTruthy()
+    expect(R.equals(lhs, rhs)).toBeTruthy()
+    expect(R.equals(rhs, lhs)).toBeTruthy()
     expect(R.equals(lhs, rhs, true)).toBeTruthy()
     expect(R.equals(rhs, lhs, true)).toBeTruthy()
 
     lhs = R.negClass(R.str("0"), R.str("1"), R.str("2"))
     rhs = R.class(R.str("0"), R.str("1"), R.str("2"))
-    expect(R.equals(lhs, rhs, false)).toBeFalsy()
-    expect(R.equals(rhs, lhs, false)).toBeFalsy()
+    expect(R.equals(lhs, rhs)).toBeFalsy()
+    expect(R.equals(rhs, lhs)).toBeFalsy()
     expect(R.equals(lhs, rhs, true)).toBeFalsy()
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 
     lhs = R.negClass(R.str("0"), R.str("1"), R.str("2"))
     rhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
-    expect(R.equals(lhs, rhs, false)).toBeFalsy()
-    expect(R.equals(rhs, lhs, false)).toBeFalsy()
+    expect(R.equals(lhs, rhs)).toBeFalsy()
+    expect(R.equals(rhs, lhs)).toBeFalsy()
     expect(R.equals(lhs, rhs, true)).toBeFalsy()
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 
     lhs = R.lazy(() => R.class(R.str("0"), R.str("1"), R.str("2"))).map(f3).map(f1)
     rhs = R.alt(R.str("0"), R.nonGrp(R.lazy(() => R.str("1"))), R.str("2"))
-    expect(R.equals(lhs, rhs, false)).toBeTruthy()
-    expect(R.equals(rhs, lhs, false)).toBeTruthy()
+    expect(R.equals(lhs, rhs)).toBeTruthy()
+    expect(R.equals(rhs, lhs)).toBeTruthy()
     expect(R.equals(lhs, rhs, true)).toBeFalsy()
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
+})
+
+test("Test 12", async ({ page }) => {
+    const lhs = R.lazy(() => R.lazy(() => R.seq(
+        R.str("Italy"),
+        R.lazy(() => R.regexp(/Switzerland/).chain(fp)),
+        R.alt(
+            R.nonGrp(R.str("Austria")).map(f1),
+            R.alt(
+                R.grp(R.str("Belgium").map(f2), "a"),
+                R.nonGrp(R.lazy(() => R.regexpGroups(/Spain/))),
+            ),
+            R.str("Poland"),
+            R.str("Portugal").map(f2),
+        ),
+        R.range(R.str("a"), R.str("z")),
+        R.regexp(/(Romania)/, 1),
+        R.str("Netherlands").map(f3)
+    )))
+    // It's lhs copy pasted
+    const rhs = R.lazy(() => R.lazy(() => R.seq(
+        R.str("Italy"),
+        R.lazy(() => R.regexp(/Switzerland/).chain(fp)),
+        R.alt(
+            R.nonGrp(R.str("Austria")).map(f1),
+            R.alt(
+                R.grp(R.str("Belgium").map(f2), "a"),
+                R.nonGrp(R.lazy(() => R.regexpGroups(/Spain/))),
+            ),
+            R.str("Poland"),
+            R.str("Portugal").map(f2),
+        ),
+        R.range(R.str("a"), R.str("z")),
+        R.regexp(/(Romania)/, 1),
+        R.str("Netherlands").map(f3)
+    )))
+    expect(R.equals(lhs, rhs)).toBeTruthy()
+    expect(R.equals(rhs, lhs)).toBeTruthy()
+    expect(R.equals(lhs, rhs, true)).toBeTruthy()
+    expect(R.equals(rhs, lhs, true)).toBeTruthy()
+
+    const rhs2 = R.nonGrp(R.seq(
+        R.str("Italy"),
+        R.regexp(/Switzerland/).chain(fp),
+        R.lazy(() => R.alt(
+            R.nonGrp(R.str("Austria")).map(f1),
+            R.alt(
+                R.grp(R.str("Belgium"), "a"),
+                R.regexpGroups(/Spain/),
+            ),
+            R.lazy(() => R.str("Poland").map(f3)),
+            R.str("Portugal"),
+        )),
+        R.range(R.str("a"), R.str("z")),
+        R.regexp(/(Romania)/).map(f2),
+        R.str("Netherlands")
+    ))
+    expect(R.equals(lhs, rhs2)).toBeTruthy()
+    expect(R.equals(rhs2, lhs)).toBeTruthy()
+    expect(R.equals(lhs, rhs2, true)).toBeFalsy()
+    expect(R.equals(rhs2, lhs, true)).toBeFalsy()
 })

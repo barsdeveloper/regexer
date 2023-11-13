@@ -35,16 +35,6 @@ export default class CapturingGroupParser extends Parser {
         return new CapturingGroupParser(parser, this.#id)
     }
 
-    /** @returns {Parser<any>} */
-    actualParser(ignoreGroup = false) {
-        return ignoreGroup ? this.#parser.actualParser(ignoreGroup) : this
-    }
-
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        return new CapturingGroupParser(this.#parser.withActualParser(other), this.#id)
-    }
-
     /**
      * @param {Context} context
      * @param {Number} position

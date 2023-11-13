@@ -33,6 +33,19 @@ export default class TimesParser extends Parser {
         this.#max = max
     }
 
+    unwrap() {
+        return this.#parser
+    }
+
+    /**
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @returns {TimesParser<T>}
+     */
+    wrap(parser) {
+        return new TimesParser(parser, this.#min, this.#max)
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position

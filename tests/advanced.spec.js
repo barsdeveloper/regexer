@@ -84,22 +84,27 @@ test("RegExp", async ({ page }) => {
     expect(R.equals(
         g.parse(/a/.source),
         R.str("a"),
+        true
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/ab/.source),
         R.str("ab"),
+        true
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/a|b/.source),
         R.alt(R.str("a"), R.str("b")),
+        true
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/|||a/.source),
         R.alt(R.success(), R.success(), R.success(), R.str("a")),
+        true
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/a||/.source),
         R.alt(R.str("a"), R.success(), R.success()),
+        true,
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/||a||/.source),
@@ -107,7 +112,8 @@ test("RegExp", async ({ page }) => {
     )).toBeTruthy()
     expect(R.equals(
         g.parse(/(abc)/.source),
-        R.grp(R.str("abc")))).toBeTruthy()
+        R.grp(R.str("abc")))).toBeTruthy(),
+        true
     expect(R.equals(
         g.parse(/(?:a(b)c)/.source),
         R.nonGrp(

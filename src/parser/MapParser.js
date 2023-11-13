@@ -7,6 +7,8 @@ import Parser from "./Parser.js"
  */
 export default class MapParser extends Parser {
 
+    static isActualParser = false
+
     #parser
     get parser() {
         return this.#parser
@@ -35,16 +37,6 @@ export default class MapParser extends Parser {
     wrap(parser) {
         return new MapParser(parser, this.#mapper)
     }
-
-    actualParser(ignoreGroup = false) {
-        return this.#parser.actualParser(ignoreGroup)
-    }
-
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        return new MapParser(this.#parser.withActualParser(other), this.#mapper)
-    }
-
     /**
      * @param {Context} context
      * @param {Number} position

@@ -16,6 +16,8 @@ export const GroupType = {
  */
 export default class NonCapturingGroupParser extends Parser {
 
+    static isActualParser = false
+
     #parser
 
     /** @param {T} parser */
@@ -31,16 +33,6 @@ export default class NonCapturingGroupParser extends Parser {
     /** @param {Parser<any>} parser */
     wrap(parser) {
         return new NonCapturingGroupParser(parser)
-    }
-
-    /** @returns {Parser<any>} */
-    actualParser(ignoreGroup = false) {
-        return this.#parser.actualParser(ignoreGroup)
-    }
-
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        return new NonCapturingGroupParser(this.#parser.withActualParser(other))
     }
 
     /**

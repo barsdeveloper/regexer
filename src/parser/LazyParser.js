@@ -7,6 +7,7 @@ import Parser from "./Parser.js"
 export default class LazyParser extends Parser {
 
     #parser
+    static isActualParser = false
 
     /** @type {P} */
     #resolvedPraser
@@ -28,25 +29,9 @@ export default class LazyParser extends Parser {
         return this.resolve()
     }
 
-    /**
-     * @template {Parser<any>} P
-     * @param {P} parser
-     */
     wrap(parser) {
-        const regexerConstructor = this.#parser().constructor
-        // @ts-expect-error
+        const regexerConstructor = /** @type {new (...args: any) => Regexer<P>} */(this.#parser().constructor)
         return new LazyParser(() => new regexerConstructor(parser))
-    }
-
-    actualParser(ignoreGroup = false) {
-        return this.resolve().actualParser(ignoreGroup)
-    }
-
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        const regexerConstructor = this.#parser().constructor
-        // @ts-expect-error
-        return new LazyParser(() => new regexerConstructor(this.#resolvedPraser.withActualParser(other)))
     }
 
     /**

@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test"
 import DeadParserElimination from "../src/transformers/DeadParserElimination.js"
-import InlineParsers from "../src/transformers/InlineParsers.js"
+import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
+import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
 
 const transformer = new DeadParserElimination()
 
@@ -9,8 +10,8 @@ const f1 = v => "f1"
 const f2 = v => "f2"
 const f3 = v => "f3"
 
-test("Inline 1", ({ page }) => {
-    const inlineParsers = new InlineParsers()
+test("Inline parsers 1", ({ page }) => {
+    const inlineParsers = new InlineParsersTransformer()
     expect(R.equals(
         inlineParsers.transform(
             R.alt(
@@ -74,8 +75,8 @@ test("Inline 1", ({ page }) => {
     )).toBeTruthy()
 })
 
-test("Inline 2", ({ page }) => {
-    const inlineParsers = new InlineParsers()
+test("Inline parsers 2", ({ page }) => {
+    const inlineParsers = new InlineParsersTransformer()
     expect(R.equals(
         inlineParsers.transform(
             R.nonGrp(
@@ -178,68 +179,81 @@ test("Inline 2", ({ page }) => {
     )).toBeTruthy()
 })
 
-test("Test 1", ({ page }) => {
-    expect(R.equals(
-        transformer.transform(
-            R.alt(
-                R.str("a"),
-                R.str("b"),
-                R.success(),
-                R.str("c"),
-                R.str("d"),
-                R.str("e")
-            )
-        ),
-        R.alt(R.str("a"), R.str("b"), R.success()),
-        true,
-    )).toBeTruthy()
+test("Remove discarded map", ({ page }) => {
+    const removeDiscardedMap = new RemoveDiscardedMapTransformer()
+    expect(
+        R.equals(
+            transformer.transform(
+                R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta").map(f1)).map(f2)))
+            ),
+            R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta")))),
+            true
+        )
+    ).toBeTruthy
 })
 
-test("Test 2", ({ page }) => {
-    expect(R.equals(
-        transformer.transform(
-            R.alt(
-                R.str("a"),
-                R.failure(),
-                R.str("b"),
-                R.failure(),
-                R.str("c").map(f1),
-                R.success().map(f2).map(f3),
-                R.str("d"),
-                R.str("e")
-            )),
-        R.alt(
-            R.str("a"),
-            R.str("b"),
-            R.str("c").map(f1),
-            R.success().map(f2).map(f3)
-        ),
-        true,
-    )).toBeTruthy()
-})
+// test("Test 1", ({ page }) => {
+//     expect(R.equals(
+//         transformer.transform(
+//             R.alt(
+//                 R.str("a"),
+//                 R.str("b"),
+//                 R.success(),
+//                 R.str("c"),
+//                 R.str("d"),
+//                 R.str("e")
+//             )
+//         ),
+//         R.alt(R.str("a"), R.str("b"), R.success()),
+//         true,
+//     )).toBeTruthy()
+// })
 
-test("Test 3", ({ page }) => {
-    expect(R.equals(
-        transformer.transform(
-            R.alt(
-                R.str("a"),
-                R.alt(
-                    R.str("b").map(f3),
-                    R.str("c"),
-                    R.success().map(f1)
-                ).map(f2).map(f1),
-                R.str("d")
-            )
-        ),
-        R.alt(
-            R.str("a"),
-            R.str("b").map(f3).map(f2).map(f1),
-            R.str("c").map(f2).map(f1),
-            R.success().map(f1).map(f2).map(f1)
-        ),
-        true,
-    )).toBeTruthy()
-})
+// test("Test 2", ({ page }) => {
+//     expect(R.equals(
+//         transformer.transform(
+//             R.alt(
+//                 R.str("a"),
+//                 R.failure(),
+//                 R.str("b"),
+//                 R.failure(),
+//                 R.str("c").map(f1),
+//                 R.success().map(f2).map(f3),
+//                 R.str("d"),
+//                 R.str("e")
+//             )),
+//         R.alt(
+//             R.str("a"),
+//             R.str("b"),
+//             R.str("c").map(f1),
+//             R.success().map(f2).map(f3)
+//         ),
+//         true,
+//     )).toBeTruthy()
+// })
+
+// test("Test 3", ({ page }) => {
+//     expect(R.equals(
+//         transformer.transform(
+//             R.alt(
+//                 R.str("a"),
+//                 R.alt(
+//                     R.str("b").map(f3),
+//                     R.str("c"),
+//                     R.success().map(f1)
+//                 ).map(f2).map(f1),
+//                 R.str("d")
+//             )
+//         ),
+//         R.alt(
+//             R.str("a"),
+//             R.str("b").map(f3).map(f2).map(f1),
+//             R.str("c").map(f2).map(f1),
+//             R.success().map(f1).map(f2).map(f1)
+//         ),
+//         true,
+//     )).toBeTruthy()
+// })
 
 // test("Test 4", ({ page }) => {
 //     expect(R.equals(

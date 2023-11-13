@@ -3,6 +3,9 @@ export default class Parser {
 
     static indentation = "    "
 
+    /** Calling parse() can make it change the overall parsing outcome */
+    static isActualParser = true
+
     /**
      * @param {Result<any>} a
      * @param {Result<any>} b
@@ -31,17 +34,13 @@ export default class Parser {
         return null
     }
 
-    canStartWith() {
-
-    }
-
     /**
      * @template {Parser<any>} T
      * @param {T} parser
      * @returns {Parser<Value>}
      */
     wrap(parser) {
-        throw new Error("Not implemented")
+        return null
     }
 
     /**
@@ -53,14 +52,30 @@ export default class Parser {
         return null
     }
 
-    /** @returns {Parser<any>} */
-    actualParser(ignoreGroup = false) {
-        return this
+    /**
+     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {(new (...args: any) => Parser<any>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @returns {Parser<any>}
+     */
+    actualParser(traverse = [], opaque = []) {
+        const self = /** @type {typeof Parser<any>} */(this.constructor)
+        return (!self.isActualParser || traverse.find(type => this instanceof type))
+            && !opaque.find(type => this instanceof type)
+            ? this.unwrap().actualParser(traverse)
+            : this
     }
 
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        return other
+    /**
+     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {(new (...args: any) => Parser<any>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @returns {Parser<any>}
+     */
+    withActualParser(other, traverse = [], opaque = []) {
+        const self = /** @type {typeof Parser<any>} */(this.constructor)
+        return (!self.isActualParser || traverse.find(type => this instanceof type))
+            && !opaque.find(type => this instanceof type)
+            ? this.wrap(this.unwrap().withActualParser(other, traverse))
+            : other
     }
 
     /**

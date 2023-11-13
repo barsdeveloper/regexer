@@ -2,6 +2,8 @@
 class Parser {
 
     static indentation = "    "
+    /** Calling parse() can make it change the overall parsing outcome */
+    static isActualParser = true
 
     /**
      * @param {Result<any>} a
@@ -31,17 +33,13 @@ class Parser {
         return null
     }
 
-    canStartWith() {
-
-    }
-
     /**
      * @template {Parser<any>} T
      * @param {T} parser
      * @returns {Parser<Value>}
      */
     wrap(parser) {
-        throw new Error("Not implemented")
+        return null
     }
 
     /**
@@ -53,16 +51,21 @@ class Parser {
         return null
     }
 
-    /** @returns {Parser<any>} */
-    actualParser(ignoreGroup = false) {
-        return this
+    /**
+     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse to find the actual parser
+     * @returns {Parser<any>}
+     */
+    actualParser(...traverse) {
+        const self = /** @type {typeof Parser<any>} */(this.constructor);
+        return !self.isActualParser || traverse.find(type => this instanceof type)
+            ? this.unwrap().actualParser()
+            : this
     }
 
     /** @returns {Parser<any>} */
     withActualParser(other) {
-        const unwrapped = other.unwrap();
-        if (unwrapped)
-        return other
+        const self = /** @type {typeof Parser<any>} */(this.constructor);
+        return self.isActualParser ? other : this.wrap(this.unwrap().withActualParser(other))
     }
 
     /**
@@ -278,6 +281,7 @@ class FailureParser extends Parser {
 class LazyParser extends Parser {
 
     #parser
+    static isActualParser = false
 
     /** @type {P} */
     #resolvedPraser
@@ -299,25 +303,9 @@ class LazyParser extends Parser {
         return this.resolve()
     }
 
-    /**
-     * @template {Parser<any>} P
-     * @param {P} parser
-     */
     wrap(parser) {
-        const regexerConstructor = this.#parser().constructor;
-        // @ts-expect-error
+        const regexerConstructor = /** @type {new (...args: any) => Regexer<P>} */(this.#parser().constructor);
         return new LazyParser(() => new regexerConstructor(parser))
-    }
-
-    actualParser(ignoreGroup = false) {
-        return this.resolve().actualParser(ignoreGroup)
-    }
-
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        const regexerConstructor = this.#parser().constructor;
-        // @ts-expect-error
-        return new LazyParser(() => new regexerConstructor(this.#resolvedPraser.withActualParser(other)))
     }
 
     /**
@@ -429,6 +417,8 @@ class LookaroundParser extends Parser {
  */
 class MapParser extends Parser {
 
+    static isActualParser = false
+
     #parser
     get parser() {
         return this.#parser
@@ -457,16 +447,6 @@ class MapParser extends Parser {
     wrap(parser) {
         return new MapParser(parser, this.#mapper)
     }
-
-    actualParser(ignoreGroup = false) {
-        return this.#parser.actualParser(ignoreGroup)
-    }
-
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        return new MapParser(this.#parser.withActualParser(other), this.#mapper)
-    }
-
     /**
      * @param {Context} context
      * @param {Number} position
@@ -770,6 +750,19 @@ class TimesParser extends Parser {
         this.#max = max;
     }
 
+    unwrap() {
+        return this.#parser
+    }
+
+    /**
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @returns {TimesParser<T>}
+     */
+    wrap(parser) {
+        return new TimesParser(parser, this.#min, this.#max)
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position
@@ -903,7 +896,13 @@ class Regexer {
      * @param {Regexer<Parser<any>>} rhs
      */
     static equals(lhs, rhs, strict = false) {
-        return lhs.getParser().equals(rhs.getParser(), strict)
+        const a = lhs.getParser();
+        const b = rhs.getParser();
+        if (b instanceof a.constructor && !(a instanceof b.constructor)) {
+            // typeof b extends typeof a, invert to take advantage of polymorphism
+            return b.equals(a, strict)
+        }
+        return a.equals(b, strict)
     }
 
     getParser() {

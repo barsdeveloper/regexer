@@ -44,7 +44,10 @@ export default class ClassParser extends AlternativeParser {
         if (!strict) {
             other = other.actualParser()
         }
-        return (!strict || other instanceof ClassParser && this.#negative === other.#negative)
+        return (
+            !strict && !this.#negative && !(other instanceof ClassParser && other.#negative)
+            || other instanceof ClassParser && this.negative === other.#negative
+        )
             && super.equals(other, strict)
     }
 

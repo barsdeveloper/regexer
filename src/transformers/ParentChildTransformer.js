@@ -17,6 +17,7 @@ export default class ParentChildTransformer extends Transformer {
         super()
         this.#parentType = parentType
         this.#childType = childType
+        this.opaque = [...this.opaque, this.#parentType]
     }
 
     /**
@@ -26,7 +27,7 @@ export default class ParentChildTransformer extends Transformer {
      */
     doTransform(parser) {
         if (parser instanceof this.#parentType) {
-            const child = parser.unwrap().actualParser(true)
+            const child = parser.unwrap().actualParser(this.traverse, this.opaque)
             if (child instanceof this.#childType) {
                 let replacement = this.doTransformParentChild(parser, child)
                 return replacement
@@ -36,11 +37,11 @@ export default class ParentChildTransformer extends Transformer {
     }
 
     /**
-     * @param {ParentT} parser
+     * @param {ParentT} parent
      * @param {ChildT} child
      * @returns {Parser<any>}
      */
-    doTransformParentChild(parser, child) {
-        return parser
+    doTransformParentChild(parent, child) {
+        return parent
     }
 }

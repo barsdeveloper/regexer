@@ -96,7 +96,13 @@ export default class Regexer {
      * @param {Regexer<Parser<any>>} rhs
      */
     static equals(lhs, rhs, strict = false) {
-        return lhs.getParser().equals(rhs.getParser(), strict)
+        const a = lhs.getParser()
+        const b = rhs.getParser()
+        if (b instanceof a.constructor && !(a instanceof b.constructor)) {
+            // typeof b extends typeof a, invert to take advantage of polymorphism
+            return b.equals(a, strict)
+        }
+        return a.equals(b, strict)
     }
 
     getParser() {

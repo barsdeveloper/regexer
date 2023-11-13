@@ -1,8 +1,9 @@
 import AlternativeParser from "../parser/AlternativeParser.js"
+import CapturingGroupParser from "../parser/CapturingGroupParser.js"
 import SequenceParser from "../parser/SequenceParser.js"
 import Transformer from "./Transformer.js"
 
-export default class InlineParsers extends Transformer {
+export default class InlineParsersTransformer extends Transformer {
 
     static #None = class { }
 
@@ -16,7 +17,7 @@ export default class InlineParsers extends Transformer {
             ? AlternativeParser
             : parser instanceof SequenceParser
                 ? SequenceParser
-                : InlineParsers.#None
+                : InlineParsersTransformer.#None
         if (parser instanceof type) {
             /** @type {[Parser<any>, ...Parser<any>[]]} */
             let children = parser.parsers
@@ -24,19 +25,19 @@ export default class InlineParsers extends Transformer {
                 ? children = [...children]
                 : children
             for (let i = 0; i < children.length; ++i) {
-                let current = children[i].actualParser(true)
+                let current = children[i].actualParser([CapturingGroupParser])
                 if (current instanceof type) {
                     writableChildren().splice(
                         i,
                         1,
-                        ...current.parsers.map(p => children[i].withActualParser(p))
+                        ...current.parsers.map(p => children[i].withActualParser(p, [CapturingGroupParser]))
                     )
                     --i
                     continue
                 }
                 current = this.doTransform(current)
                 if (children[i] != current) {
-                    writableChildren()[i] = children[i].withActualParser(current)
+                    writableChildren()[i] = children[i].withActualParser(current, [CapturingGroupParser])
                 }
             }
             if (children !== parser.parsers) {

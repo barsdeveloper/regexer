@@ -112,7 +112,7 @@ test("Test 1", async ({ page }) => {
 })
 
 test("Test 2", async ({ page }) => {
-    expect(R.equals(R.str("a"), R.str("b"))).toBeFalsy()
+    expect(R.equals(R.str("a"), R.str("b"), false)).toBeFalsy()
     expect(R.equals(R.str("a"), R.str("b"), true)).toBeFalsy()
 })
 
@@ -217,6 +217,52 @@ test("Test 8", async ({ page }) => {
     )
     expect(R.equals(lhs, rhs)).toBeTruthy()
     expect(R.equals(rhs, lhs)).toBeTruthy()
+    expect(R.equals(lhs, rhs, true)).toBeFalsy()
+    expect(R.equals(rhs, lhs, true)).toBeFalsy()
+})
+
+test("Test 9", async ({ page }) => {
+    /** @type {Regexer<Parser<any>>} */
+    let lhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
+    /** @type {Regexer<Parser<any>>} */
+    let rhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
+    expect(R.equals(lhs, rhs, false)).toBeTruthy()
+    expect(R.equals(rhs, lhs, false)).toBeTruthy()
+    expect(R.equals(lhs, rhs, true)).toBeTruthy()
+    expect(R.equals(rhs, lhs, true)).toBeTruthy()
+
+    lhs = R.class(R.str("0"), R.str("1"), R.str("2"))
+    rhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
+    expect(R.equals(lhs, rhs, false)).toBeTruthy()
+    expect(R.equals(rhs, lhs, false)).toBeTruthy()
+    expect(R.equals(lhs, rhs, true)).toBeFalsy()
+    expect(R.equals(rhs, lhs, true)).toBeFalsy()
+
+    lhs = R.class(R.str("0"), R.str("1"), R.str("2"))
+    rhs = R.class(R.str("0"), R.str("1"), R.str("2"))
+    expect(R.equals(lhs, rhs, false)).toBeTruthy()
+    expect(R.equals(rhs, lhs, false)).toBeTruthy()
+    expect(R.equals(lhs, rhs, true)).toBeTruthy()
+    expect(R.equals(rhs, lhs, true)).toBeTruthy()
+
+    lhs = R.negClass(R.str("0"), R.str("1"), R.str("2"))
+    rhs = R.class(R.str("0"), R.str("1"), R.str("2"))
+    expect(R.equals(lhs, rhs, false)).toBeFalsy()
+    expect(R.equals(rhs, lhs, false)).toBeFalsy()
+    expect(R.equals(lhs, rhs, true)).toBeFalsy()
+    expect(R.equals(rhs, lhs, true)).toBeFalsy()
+
+    lhs = R.negClass(R.str("0"), R.str("1"), R.str("2"))
+    rhs = R.alt(R.str("0"), R.str("1"), R.str("2"))
+    expect(R.equals(lhs, rhs, false)).toBeFalsy()
+    expect(R.equals(rhs, lhs, false)).toBeFalsy()
+    expect(R.equals(lhs, rhs, true)).toBeFalsy()
+    expect(R.equals(rhs, lhs, true)).toBeFalsy()
+
+    lhs = R.lazy(() => R.class(R.str("0"), R.str("1"), R.str("2"))).map(f3).map(f1)
+    rhs = R.alt(R.str("0"), R.nonGrp(R.lazy(() => R.str("1"))), R.str("2"))
+    expect(R.equals(lhs, rhs, false)).toBeTruthy()
+    expect(R.equals(rhs, lhs, false)).toBeTruthy()
     expect(R.equals(lhs, rhs, true)).toBeFalsy()
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
 })

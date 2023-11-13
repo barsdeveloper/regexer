@@ -1,7 +1,7 @@
 import AlternativeParser from "../parser/AlternativeParser.js"
 import Transformer from "./Transformer.js"
 
-export default class DeadParserElimination extends Transformer {
+export default class AlternativesMergeTransformer extends Transformer {
 
     /**
      * @template T

@@ -1,8 +1,18 @@
+import CapturingGroupParser from "../parser/CapturingGroupParser.js"
 import Regexer from "../Regexer.js"
 
 export default class Transformer {
 
     #next = null
+
+    /** @type {(new (...args: any) => Parser<any>)[]} */
+    traverse = [CapturingGroupParser]
+
+    /** @type {(new (...args: any) => Parser<any>)[]} */
+    opaque = []
+
+    constructor() {
+    }
 
     chain(transformer) {
         this.#next = transformer
@@ -15,10 +25,10 @@ export default class Transformer {
      * @return {Regexer<T>}
      */
     transform(regexer) {
-        const actualParser = regexer.getParser().actualParser(true)
+        const actualParser = regexer.getParser().actualParser(this.traverse, this.opaque)
         let transformed = this.doTransform(actualParser)
         if (actualParser !== transformed) {
-            transformed = regexer.getParser().withActualParser(transformed)
+            transformed = regexer.getParser().withActualParser(transformed, this.traverse, this.opaque)
             // @ts-expect-error
             return new Regexer(transformed, true)
         }

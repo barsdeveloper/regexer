@@ -17,7 +17,7 @@ export default class AnyCharParser extends RegExpParser {
      * @param {Parser<any>} parser
      */
     dominates(parser) {
-        return this.#dotAll || !parser.actualParser(true).parse(Reply.makeContext("\n"), 0).status
+        return this.#dotAll || !parser.actualParser().parse(Reply.makeContext("\n"), 0).status
     }
 
     toString(indent = 0) {

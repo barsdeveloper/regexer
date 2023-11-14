@@ -9,7 +9,7 @@ export default class JsonGrammar {
     static #true = R.str("true").map(() => true)
     static #false = R.str("false").map(() => false)
     static #string = R.doubleQuotedString
-    static #number = R.numberExponential.map(v => Number(v))
+    static #number = R.numberExponential
     /** @type {Regexer<Parser<any[]>>} */
     static #array = R.seq(
         R.regexp(/\[\s*/),

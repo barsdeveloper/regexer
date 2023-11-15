@@ -41,7 +41,7 @@ export default class ParentChildTransformer extends Transformer {
                     }
                 } else {
                     const transformed = this.doTransform(current)
-                    if (children[i] !== transformed) {
+                    if (current !== transformed) {
                         children[i] = children[i].withActualParser(transformed, this.traverse, this.opaque)
                         changed = true
                     }

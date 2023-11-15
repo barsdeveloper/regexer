@@ -35,7 +35,7 @@ export default class InlineParsersTransformer extends Transformer {
                     continue
                 }
                 const transformed = this.doTransform(current)
-                if (transformed != current) {
+                if (current != transformed) {
                     children[i] = children[i].withActualParser(transformed, [CapturingGroupParser])
                     changed = true
                 }

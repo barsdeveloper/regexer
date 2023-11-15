@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test"
-import DeadParserElimination from "../src/transformers/DeadParserElimination.js"
 import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
 import LookaroundParser from "../src/parser/LookaroundParser.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"

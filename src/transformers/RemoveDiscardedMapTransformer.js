@@ -1,6 +1,5 @@
 import LookaroundParser from "../parser/LookaroundParser.js"
 import MapParser from "../parser/MapParser.js"
-import StringParser from "../parser/StringParser.js"
 import ParentChildTransformer from "./ParentChildTransformer.js"
 
 /** @extends {ParentChildTransformer<[LookaroundParser, MapParser], [LookaroundParser, MapParser]>} */

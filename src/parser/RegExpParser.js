@@ -67,4 +67,8 @@ export default class RegExpParser extends Parser {
             && (!strict || this.#group === other.#group)
             && this.#regexp.source === other.#regexp.source
     }
+
+    toString(indent = 0) {
+        return "/" + this.#regexp.source + "/"
+    }
 }

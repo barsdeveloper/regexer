@@ -26,15 +26,15 @@ export default class ChainedParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
     /**
-     * @template {Parser<ParserValue<T>>} P
-     * @param {P} parser
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
      */
-    wrap(parser) {
-        return new ChainedParser(parser, this.#fn)
+    wrap(...parsers) {
+        return new ChainedParser(parsers[0], this.#fn)
     }
 
     /**

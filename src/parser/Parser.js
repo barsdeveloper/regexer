@@ -1,4 +1,4 @@
-/** @template Value */
+/** @template T */
 export default class Parser {
 
     static indentation = "    "
@@ -29,24 +29,24 @@ export default class Parser {
         return this.equals(parser, false)
     }
 
-    /** @returns {Parser<Value>} */
+    /** @returns {Parser<T>[]} */
     unwrap() {
-        return null
+        return []
     }
 
     /**
-     * @template {Parser<any>} T
-     * @param {T} parser
-     * @returns {Parser<Value>}
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     * @returns {Parser<any>}
      */
-    wrap(parser) {
+    wrap(...parsers) {
         return null
     }
 
     /**
      * @param {Context} context
      * @param {Number} position
-     * @returns {Result<Value>}
+     * @returns {Result<T>}
      */
     parse(context, position) {
         return null
@@ -59,22 +59,27 @@ export default class Parser {
      */
     actualParser(traverse = [], opaque = []) {
         const self = /** @type {typeof Parser<any>} */(this.constructor)
-        return (!self.isActualParser || traverse.find(type => this instanceof type))
+        let isTraversable = (!self.isActualParser || traverse.find(type => this instanceof type))
             && !opaque.find(type => this instanceof type)
-            ? this.unwrap().actualParser(traverse)
-            : this
+        let unwrapped = isTraversable ? this.unwrap() : undefined
+        isTraversable &&= unwrapped?.length === 1
+        return isTraversable ? unwrapped[0].actualParser(traverse, opaque) : this
     }
 
     /**
+     * @param {Parser<any>} other
      * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
      * @param {(new (...args: any) => Parser<any>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
      * @returns {Parser<any>}
      */
     withActualParser(other, traverse = [], opaque = []) {
         const self = /** @type {typeof Parser<any>} */(this.constructor)
-        return (!self.isActualParser || traverse.find(type => this instanceof type))
-            && !opaque.find(type => this instanceof type)
-            ? this.wrap(this.unwrap().withActualParser(other, traverse))
+        let isTraversable = (!self.isActualParser || traverse.some(type => this instanceof type))
+            && !opaque.some(type => this instanceof type)
+        let unwrapped = isTraversable ? this.unwrap() : undefined
+        isTraversable &&= unwrapped?.length === 1
+        return isTraversable
+            ? this.wrap(unwrapped[0].withActualParser(other, traverse, opaque))
             : other
     }
 
@@ -86,7 +91,7 @@ export default class Parser {
         return strict ? this.actualParser() === other.actualParser() : this === other
     }
 
-    toString(indent) {
+    toString(indent = 0) {
         return `${this.constructor.name} does not implement toString()`
     }
 }

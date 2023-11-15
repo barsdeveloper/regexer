@@ -35,6 +35,18 @@ export default class LookaroundParser extends Parser {
         this.#type = type
     }
 
+    unwrap() {
+        return [this.#parser]
+    }
+
+    /**
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
+     */
+    wrap(...parsers) {
+        return new LookaroundParser(parsers[0], this.#type)
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position

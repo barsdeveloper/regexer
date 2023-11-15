@@ -5,8 +5,6 @@ import LookaroundParser from "../src/parser/LookaroundParser.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
 
-const transformer = new DeadParserElimination()
-
 const f1 = v => "f1"
 const f2 = v => "f2"
 const f3 = v => "f3"
@@ -185,7 +183,7 @@ test("Remove discarded map 1", ({ page }) => {
     const removeDiscardedMap = new RemoveDiscardedMapTransformer()
     expect(
         R.equals(
-            transformer.transform(
+            removeDiscardedMap.transform(
                 R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta").map(f1)).map(f2)))
             ),
             R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta")))),
@@ -196,9 +194,10 @@ test("Remove discarded map 1", ({ page }) => {
 
 test("Remove discarded map 2", ({ page }) => {
     const removeDiscardedMap = new RemoveDiscardedMapTransformer()
+    const numberWithoutMap = R.regexp(R.number.getParser().parser.regexp)
     expect(
         R.equals(
-            transformer.transform(
+            removeDiscardedMap.transform(
                 R.grp(R.alt(
                     R.seq(
                         R.lookahead(R.nonGrp(R.str("Ireland").map(f1))).map(f2),
@@ -226,12 +225,12 @@ test("Remove discarded map 2", ({ page }) => {
                     R.lookahead(
                         R.lazy(() => R.grp(R.str("Italy"), "first").map(f1))
                             .chain(fp)
-                    ).map(f2)
+                    )
                 ).map(f2),
                 R.class(R.str("a")),
                 R.anyChar(),
                 R.optWhitespace,
-                R.lookaround(R.lazy(() => R.grp(R.lazy(() => R.number), "second").map(f1)))
+                R.lookaround(R.lazy(() => R.grp(R.lazy(() => numberWithoutMap), "second")))
             )),
             true
         )

@@ -13,45 +13,42 @@ export default class InlineParsersTransformer extends Transformer {
      * @return {Parser<T>}
      */
     doTransform(parser) {
-        const type = parser instanceof AlternativeParser
-            ? AlternativeParser
-            : parser instanceof SequenceParser
-                ? SequenceParser
-                : InlineParsersTransformer.#None
+        /**
+         * @type {(new (...args: any) => AlternativeParser<[Parser<any>, ...Parser<any>[]]>)
+         *     | (new (...args: any) => SequenceParser<[Parser<any>, ...Parser<any>[]]>)}
+         */
+        const type = parser instanceof AlternativeParser ? AlternativeParser : SequenceParser
+        let changed = false
+        /** @type {Parser<any>[]} */
+        let children = parser.unwrap()
         if (parser instanceof type) {
-            /** @type {[Parser<any>, ...Parser<any>[]]} */
-            let children = parser.parsers
-            const writableChildren = () => children === parser.parsers
-                ? children = [...children]
-                : children
             for (let i = 0; i < children.length; ++i) {
                 let current = children[i].actualParser([CapturingGroupParser])
                 if (current instanceof type) {
-                    writableChildren().splice(
+                    children.splice(
                         i,
                         1,
                         ...current.parsers.map(p => children[i].withActualParser(p, [CapturingGroupParser]))
                     )
+                    changed = true
                     --i
                     continue
                 }
-                current = this.doTransform(current)
-                if (children[i] != current) {
-                    writableChildren()[i] = children[i].withActualParser(current, [CapturingGroupParser])
+                const transformed = this.doTransform(current)
+                if (transformed != current) {
+                    children[i] = children[i].withActualParser(transformed, [CapturingGroupParser])
+                    changed = true
                 }
             }
-            if (children !== parser.parsers) {
-                // @ts-expect-error
-                return new type(...children)
-            }
-            return parser
+        } else {
+            children = children.map(child => {
+                const transformed = this.doTransform(child)
+                changed ||= child !== transformed
+                return transformed
+            })
         }
-        const unwrapped = parser.unwrap()
-        if (unwrapped) {
-            const transformed = this.doTransform(unwrapped)
-            if (transformed !== unwrapped) {
-                return parser.wrap(transformed)
-            }
+        if (changed) {
+            return parser.wrap(...children)
         }
         return parser
     }

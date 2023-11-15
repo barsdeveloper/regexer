@@ -30,13 +30,17 @@ export default class MapParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
-    /** @param {Parser<any>} parser */
-    wrap(parser) {
-        return new MapParser(parser, this.#mapper)
+    /**
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     */
+    wrap(...parsers) {
+        return new MapParser(parsers[0], this.#mapper)
     }
+
     /**
      * @param {Context} context
      * @param {Number} position

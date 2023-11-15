@@ -24,15 +24,15 @@ export default class CapturingGroupParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
     /**
-     * @template {Parser<any>} P
-     * @param {P} parser
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
      */
-    wrap(parser) {
-        return new CapturingGroupParser(parser, this.#id)
+    wrap(...parsers) {
+        return new CapturingGroupParser(parsers[0], this.#id)
     }
 
     /**
@@ -57,6 +57,6 @@ export default class CapturingGroupParser extends Parser {
     }
 
     toString(indent = 0) {
-        return "(" + this.#parser.toString(indent) + ")"
+        return "(" + (this.#id !== "" ? `?<${this.#id}>` : "") + this.#parser.toString(indent) + ")"
     }
 }

@@ -20,15 +20,15 @@ export default class AtomicGroupParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
     /**
-     * @template {Parser<any>} P
-     * @param {P} parser
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
      */
-    wrap(parser) {
-        return new AtomicGroupParser(parser)
+    wrap(...parsers) {
+        return new AtomicGroupParser(parsers[0])
     }
 
     /**

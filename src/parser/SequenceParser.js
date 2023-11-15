@@ -18,6 +18,18 @@ export default class SequenceParser extends Parser {
         this.#parsers = parsers
     }
 
+    unwrap() {
+        return [...this.#parsers]
+    }
+
+    /**
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
+     */
+    wrap(...parsers) {
+        return new SequenceParser(...parsers)
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position

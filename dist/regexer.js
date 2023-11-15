@@ -38,7 +38,7 @@ class Parser {
      * @param {T} parser
      * @returns {Parser<Value>}
      */
-    wrap(parser) {
+    wrap(...parser) {
         return null
     }
 
@@ -224,7 +224,7 @@ class ChainedParser extends Parser {
      * @template {Parser<ParserValue<T>>} P
      * @param {P} parser
      */
-    wrap(parser) {
+    wrap(...parser) {
         return new ChainedParser(parser, this.#fn)
     }
 

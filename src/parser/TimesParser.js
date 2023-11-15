@@ -2,8 +2,8 @@ import Parser from "./Parser.js"
 import Reply from "../Reply.js"
 
 /**
- * @template {Parser<any>} P
- * @extends Parser<ParserValue<P>[]>
+ * @template {Parser<any>} T
+ * @extends Parser<ParserValue<T>[]>
  */
 export default class TimesParser extends Parser {
 
@@ -22,7 +22,7 @@ export default class TimesParser extends Parser {
         return this.#max
     }
 
-    /** @param {P} parser */
+    /** @param {T} parser */
     constructor(parser, min = 0, max = Number.POSITIVE_INFINITY) {
         super()
         if (min > max) {
@@ -34,16 +34,15 @@ export default class TimesParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
     /**
-     * @template {Parser<any>} T
-     * @param {T} parser
-     * @returns {TimesParser<T>}
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
      */
-    wrap(parser) {
-        return new TimesParser(parser, this.#min, this.#max)
+    wrap(...parsers) {
+        return new TimesParser(parsers[0], this.#min, this.#max)
     }
 
     /**
@@ -52,7 +51,7 @@ export default class TimesParser extends Parser {
      */
     parse(context, position) {
         const value = []
-        const result = /** @type {Result<ParserValue<P>[]>} */(
+        const result = /** @type {Result<ParserValue<T>[]>} */(
             Reply.makeSuccess(position, value)
         )
         for (let i = 0; i < this.#max; ++i) {

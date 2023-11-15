@@ -1,18 +1,18 @@
 import Parser from "./Parser.js"
 
 /**
- * @template {Parser<any>} P
- * @extends Parser<ParserValue<P>>
+ * @template {Parser<any>} T
+ * @extends Parser<ParserValue<T>>
  */
 export default class LazyParser extends Parser {
 
     #parser
     static isActualParser = false
 
-    /** @type {P} */
+    /** @type {T} */
     #resolvedPraser
 
-    /** @param {() => Regexer<P>} parser */
+    /** @param {() => Regexer<T>} parser */
     constructor(parser) {
         super()
         this.#parser = parser
@@ -26,12 +26,18 @@ export default class LazyParser extends Parser {
     }
 
     unwrap() {
-        return this.resolve()
+        return [this.resolve()]
     }
 
-    wrap(parser) {
-        const regexerConstructor = /** @type {new (...args: any) => Regexer<P>} */(this.#parser().constructor)
-        return new LazyParser(() => new regexerConstructor(parser))
+    /**
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
+     */
+    wrap(...parsers) {
+        const regexerConstructor = /** @type {new (...args: any) => Regexer<typeof parsers[0]>} */(
+            this.#parser().constructor
+        )
+        return new LazyParser(() => new regexerConstructor(parsers[0]))
     }
 
     /**

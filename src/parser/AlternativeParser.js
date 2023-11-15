@@ -2,7 +2,7 @@ import Parser from "./Parser.js"
 import Reply from "../Reply.js"
 
 /**
- * @template {[Parser<any>, ...Parser<any>[]]} T
+ * @template {Parser<any>[]} T
  * @extends Parser<ParserValue<T>>
  */
 export default class AlternativeParser extends Parser {
@@ -16,6 +16,18 @@ export default class AlternativeParser extends Parser {
     constructor(...parsers) {
         super()
         this.#parsers = parsers
+    }
+
+    unwrap() {
+        return [...this.#parsers]
+    }
+
+    /**
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     */
+    wrap(...parsers) {
+        return new AlternativeParser(...parsers)
     }
 
     /**

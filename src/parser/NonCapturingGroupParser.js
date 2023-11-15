@@ -27,12 +27,15 @@ export default class NonCapturingGroupParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
-    /** @param {Parser<any>} parser */
-    wrap(parser) {
-        return new NonCapturingGroupParser(parser)
+    /**
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
+     */
+    wrap(...parsers) {
+        return new NonCapturingGroupParser(parsers[0])
     }
 
     /**

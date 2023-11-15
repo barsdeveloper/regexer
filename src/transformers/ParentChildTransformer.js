@@ -17,7 +17,7 @@ export default class ParentChildTransformer extends Transformer {
         super()
         this.#parentTypes = parentTypes
         this.#childTypes = childTypes
-        this.opaque = [...this.opaque, ...this.#parentTypes, ...this.#childTypes]
+        this.opaque = [...new Set([...this.opaque, ...this.#parentTypes, ...this.#childTypes])]
     }
 
     /**
@@ -26,23 +26,36 @@ export default class ParentChildTransformer extends Transformer {
      * @return {Parser<T>}
      */
     doTransform(parser) {
-        let unwrapped = parser.unwrap()
+        let changed = false
+        let children = parser.unwrap()
         if (this.#parentTypes.find(t => parser instanceof t)) {
-            const child = parser.unwrap().actualParser(this.traverse, this.opaque)
-            if (this.#childTypes.find(t => child instanceof t)) {
-                let replacement = this.doTransformParentChild(
+            for (let i = 0; i < children.length; ++i) {
+                const current = children[i].actualParser(this.traverse, this.opaque)
+                if (this.#childTypes.find(t => current instanceof t)) {
+                    const replacement = this.doTransformParentChild(
                     /** @type {UnionFromArray<ParentTypes>} */(parser),
-                    /** @type {UnionFromArray<ChildTypes>} */(child)
-                )
-                return replacement
+                    /** @type {UnionFromArray<ChildTypes>} */(current)
+                    )
+                    if (replacement !== parser) {
+                        return this.doTransform(replacement)
+                    }
+                } else {
+                    const transformed = this.doTransform(current)
+                    if (children[i] !== transformed) {
+                        children[i] = children[i].withActualParser(transformed, this.traverse, this.opaque)
+                        changed = true
+                    }
+                }
             }
-            unwrapped = child.unwrap()
+        } else {
+            children = children.map(child => {
+                const transformed = this.doTransform(child)
+                changed ||= child !== transformed
+                return transformed
+            })
         }
-        if (unwrapped) {
-            const transformed = this.doTransform(unwrapped)
-            if (transformed !== unwrapped) {
-                return parser.wrap(transformed)
-            }
+        if (changed) {
+            return parser.wrap(...children)
         }
         return parser
     }

@@ -96,7 +96,8 @@ test("Inline parsers 2", ({ page }) => {
                                 R.grp(
                                     R.grp(
                                         R.seq(
-                                            R.grp(R.grp(R.str("3"), "charlie").map(f2), "delta")
+                                            R.grp(R.grp(R.str("3"), "charlie").map(f2), "delta"),
+                                            R.success(),
                                         ).map(f3),
                                         "echo"
                                     ).map(f1),
@@ -113,7 +114,8 @@ test("Inline parsers 2", ({ page }) => {
                         R.alt(
                             R.nonGrp(
                                 R.lazy(() => RegExpGrammar.regexp.parse(/london|paris|madrid|milan/.source))
-                            )
+                            ),
+                            R.failure(),
                         )
                     ).map(f1),
                     "india"
@@ -139,13 +141,17 @@ test("Inline parsers 2", ({ page }) => {
                     R.grp(
                         R.grp(
                             R.grp(
-                                R.grp(
-                                    R.grp(
-                                        R.str("3"),
-                                        "charlie"
-                                    ).map(f2),
-                                    "delta"
-                                ).map(f3),
+                                R.grp(R.grp(R.str("3"), "charlie").map(f2), "delta").map(f3),
+                                "echo"
+                            ).map(f1),
+                            "foxtrot"
+                        ).map(f2).map(f2),
+                        "hotel"
+                    ),
+                    R.grp(
+                        R.grp(
+                            R.grp(
+                                R.success().map(f3),
                                 "echo"
                             ).map(f1),
                             "foxtrot"
@@ -169,6 +175,7 @@ test("Inline parsers 2", ({ page }) => {
                         R.nonGrp(R.str("paris")),
                         R.nonGrp(R.str("madrid")),
                         R.nonGrp(R.str("milan")),
+                        R.failure(),
                     )
                 ).map(f1),
                 "india"
@@ -176,6 +183,114 @@ test("Inline parsers 2", ({ page }) => {
         ),
         true
     )).toBeTruthy()
+})
+
+test("Inline parsers 3", ({ page }) => {
+    const inlineParsers = new InlineParsersTransformer()
+    expect(
+        R.equals(
+            inlineParsers.transform(
+                R.lazy(() => R.grp(
+                    R.seq(
+                        R.anyChar().times(20),
+                        R.lookaround(
+                            R.seq(
+                                R.str("a"),
+                                R.seq(R.str("b"), R.str("c")),
+                                R.alt(
+                                    R.str("A"),
+                                    R.alt(
+                                        R.alt(
+                                            R.str("B"),
+                                            R.str("C"),
+                                        ),
+                                        R.alt(
+                                            R.str("D"),
+                                            R.str("E"),
+                                            R.alt(
+                                                R.str("F"),
+                                                R.str("G"),
+                                            )
+                                        ),
+                                        R.str("H"),
+                                    ),
+                                ),
+                                R.str("d"),
+                                R.seq(
+                                    R.seq(R.seq(R.str("e"), R.str("f")), R.str("g")),
+                                    R.str("h"),
+                                    R.alt(
+                                        R.alt(
+                                            R.regexp(/1/),
+                                            R.regexp(/2/),
+                                            R.alt(
+                                                R.alt(
+                                                    R.regexp(/3/),
+                                                    R.regexp(/4/),
+                                                ),
+                                                R.regexp(/5/),
+                                                R.alt(
+                                                    R.regexp(/6/),
+                                                    R.alt(
+                                                        R.regexp(/7/),
+                                                        R.regexp(/8/),
+                                                    )
+                                                ),
+                                            ),
+                                        ),
+                                        R.regexp(/9/),
+                                    ),
+                                ),
+                            ),
+                            LookaroundParser.Type.NEGATIVE_BEHIND
+                        ),
+                    ),
+                    "aaa"
+                ))
+            ),
+            R.lazy(() => R.grp(
+                R.seq(
+                    R.anyChar().times(20),
+                    R.lookaround(
+                        R.seq(
+                            R.str("a"),
+                            R.str("b"),
+                            R.str("c"),
+                            R.alt(
+                                R.str("A"),
+                                R.str("B"),
+                                R.str("C"),
+                                R.str("D"),
+                                R.str("E"),
+                                R.str("F"),
+                                R.str("G"),
+                                R.str("H"),
+                            ),
+                            R.str("d"),
+                            R.str("e"),
+                            R.str("f"),
+                            R.str("g"),
+                            R.str("h"),
+                            R.alt(
+                                R.regexp(/1/),
+                                R.regexp(/2/),
+                                R.regexp(/3/),
+                                R.regexp(/4/),
+                                R.regexp(/5/),
+                                R.regexp(/6/),
+                                R.regexp(/7/),
+                                R.regexp(/8/),
+                                R.regexp(/9/),
+                            ),
+                        ),
+                        LookaroundParser.Type.NEGATIVE_BEHIND
+                    ),
+                ),
+                "aaa"
+            )),
+            true
+        )
+    ).toBeTruthy()
 })
 
 test("Remove discarded map 1", ({ page }) => {

@@ -158,7 +158,7 @@ export default class Regexer {
     // Combinators
 
     /**
-     * @template {Regexer<any>[]} P
+     * @template {[Regexer<any>, Regexer<any>, ...Regexer<any>[]]} P
      * @param {P} parsers
      * @returns {Regexer<SequenceParser<UnwrapParser<P>>>}
      */
@@ -169,7 +169,7 @@ export default class Regexer {
     }
 
     /**
-     * @template {Regexer<any>[]} P
+     * @template {[Regexer<any>, Regexer<any>, ...Regexer<any>[]]} P
      * @param {P} parsers
      * @returns {Regexer<AlternativeParser<UnwrapParser<P>>>}
      */

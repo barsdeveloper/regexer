@@ -40,6 +40,7 @@
  * @typedef {{
  *     input: String,
  *     parser: Regexer,
+ *     visited: Set<Parser<any>>,
  * }} Context
  */
 
@@ -50,11 +51,11 @@
  *     : T extends import("./parser/RegExpParser.js").default<-1> ? RegExpExecArray
  *     : T extends import("./parser/SequenceParser.js").default<infer P> ? ParserValue<P>
  *     : T extends import("./parser/StringParser.js").default<infer S> ? S
- *     : T extends import("./parser/TimesParser.js").default<infer P> ? ParserValue<P>[]
  *     : T extends import("./parser/MapParser.js").default<any, infer R> ? R
  *     : T extends import("./parser/AlternativeParser.js").default<infer P> ? UnionFromArray<ParserValue<P>>
  *     : T extends import("./parser/LazyParser.js").default<infer P> ? ParserValue<P>
  *     : T extends import("./parser/RegExpParser.js").default<any> ? String
+ *     : T extends import("./parser/TimesParser.js").default<infer P> ? ParserValue<P>[]
  *     : T extends import("./parser/Parser.js").default<infer V> ? V
  *     : T extends import("./parser/LookaroundParser.js/index.js").LookaroundParser ? ""
  *     : never

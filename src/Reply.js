@@ -36,10 +36,9 @@ export default class Reply {
 
     /** @param {String} input */
     static makeContext(input) {
-        return /** @type {Context} */(
-            {
-                input: input
-            }
-        )
+        return /** @type {Context} */({
+            input: input,
+            visited: new Set(),
+        })
     }
 }

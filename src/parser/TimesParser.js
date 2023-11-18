@@ -3,7 +3,7 @@ import Reply from "../Reply.js"
 
 /**
  * @template {Parser<any>} T
- * @extends Parser<ParserValue<T>[]>
+ * @extends {Parser<ParserValue<T>[]>}
  */
 export default class TimesParser extends Parser {
 

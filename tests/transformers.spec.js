@@ -3,6 +3,7 @@ import InlineParsersTransformer from "../src/transformers/InlineParsersTransform
 import LookaroundParser from "../src/parser/LookaroundParser.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
+import RemoveUselessLazyTransformer from "../src/transformers/RemoveLazyTransformer.js"
 
 const f1 = v => "f1"
 const f2 = v => "f2"
@@ -346,6 +347,32 @@ test("Remove discarded map 2", ({ page }) => {
                 R.optWhitespace,
                 R.lookaround(R.lazy(() => R.grp(R.lazy(() => numberWithoutMap), "second")))
             )),
+            true
+        )
+    ).toBeTruthy()
+})
+
+test("Remove useless lazy", ({ page }) => {
+    const removeUselessLazy = new RemoveUselessLazyTransformer()
+    class Grammar {
+        static a = R.str("a")
+        static b = R.str("b").map(f1)
+        static c = R.alt(R.lazy(() => Grammar.a), Grammar.b)
+        /** @type {Regexer<Parser<any>>} */
+        static d = R.lazy(() => R.seq(R.lazy(() => Grammar.c), Grammar.a, R.lazy(() => Grammar.root.map(f2))))
+        static root = R.alt(R.lazy(() => Grammar.d), R.lazy(() => Grammar.b))
+    }
+    expect(
+        R.equals(
+            removeUselessLazy.transform(Grammar.root),
+            R.alt(
+                R.seq(
+                    R.alt(Grammar.a, Grammar.b),
+                    Grammar.a,
+                    Grammar.root.map(f2)
+                ),
+                Grammar.b
+            ),
             true
         )
     ).toBeTruthy()

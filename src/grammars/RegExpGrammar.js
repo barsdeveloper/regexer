@@ -170,6 +170,7 @@ export default class RegExpGrammar {
     )
 
     static #range = R.seq(this.#rangeEndpoint, R.str("-"), this.#rangeEndpoint)
+        // @ts-expect-error
         .map(([from, _, to]) => R.range(from, to))
 
     static #class = R.seq(
@@ -255,13 +256,17 @@ export default class RegExpGrammar {
         if (v.length === 1) {
             return v[0]
         }
+        // @ts-expect-error
         return R.seq(...v)
     })
 
     static #alternation = R.seq(
         this.#sequence,
         R.seq(R.str("|"), this.#sequence).map(([pipe, seq]) => seq).many()
-    ).map(([first, rest]) => rest.length === 0 ? first : R.alt(first, ...rest))
+
+    )
+        //@ts-expect-error
+        .map(([first, rest]) => rest.length === 0 ? first : R.alt(first, ...rest))
 
     /** @type {Regexer<Parser<Regexer<Parser<any>>>>} */
     static regexp = this.#alternation

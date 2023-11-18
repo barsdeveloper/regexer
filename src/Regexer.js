@@ -215,12 +215,12 @@ export default class Regexer {
         return this.times(0, n)
     }
 
-    /** @returns {Regexer<T | undefined>} */
+    /** @returns {Regexer<T?>} */
     opt() {
         // @ts-expect-error
         return Regexer.alt(
             this,
-            Regexer.success(undefined)
+            Regexer.success(null)
         )
     }
 

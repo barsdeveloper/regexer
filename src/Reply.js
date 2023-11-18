@@ -7,6 +7,8 @@
  * }} Result
  */
 
+import PairMap from "./utility/PairMap.js"
+
 export default class Reply {
 
     /**
@@ -34,11 +36,12 @@ export default class Reply {
         })
     }
 
-    /** @param {String} input */
-    static makeContext(input) {
+    /** @param {Regexer<Parser<any>>} regexer */
+    static makeContext(regexer, input = "") {
         return /** @type {Context} */({
+            regexer: regexer,
             input: input,
-            visited: new Set(),
+            visited: new PairMap()
         })
     }
 }

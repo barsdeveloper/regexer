@@ -100,9 +100,9 @@ export default class Regexer {
         const b = rhs.getParser()
         if (b instanceof a.constructor && !(a instanceof b.constructor)) {
             // typeof b extends typeof a, invert to take advantage of polymorphism
-            return b.equals(a, strict)
+            return b.equals(Reply.makeContext(rhs), a, strict)
         }
-        return a.equals(b, strict)
+        return a.equals(Reply.makeContext(lhs), b, strict)
     }
 
     getParser() {
@@ -114,7 +114,7 @@ export default class Regexer {
      * @returns {Result<ParserValue<T>>}
      */
     run(input) {
-        const result = this.#parser.parse(Reply.makeContext(input), 0)
+        const result = this.#parser.parse(Reply.makeContext(this, input), 0)
         return result.status && result.position === input.length ? result : Reply.makeFailure(result.position)
     }
 
@@ -187,12 +187,11 @@ export default class Regexer {
     }
 
     /**
-     * @template {Regexer<Parser<any>>} P
+     * @template {Regexer<any>} P
      * @param {() => P} parser
      * @returns {Regexer<LazyParser<UnwrapParser<P>>>}
      */
     static lazy(parser) {
-        // @ts-expect-error
         return new Regexer(new LazyParser(parser))
     }
 
@@ -231,7 +230,6 @@ export default class Regexer {
     sepBy(separator, allowTrailing = false) {
         const results = Regexer.seq(
             this,
-            // @ts-expect-error
             Regexer.seq(separator, this).map(Regexer.#secondElementGetter).many()
         )
             .map(Regexer.#arrayFlatter)

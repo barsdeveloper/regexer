@@ -46,21 +46,16 @@ export default class AlternativeParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
-        if (this === other) {
-            return true
-        }
+    doEquals(context, other, strict) {
         if (!(other instanceof AlternativeParser) || this.#parsers.length != other.#parsers.length) {
             return false
         }
         for (let i = 0; i < this.#parsers.length; ++i) {
-            if (!this.#parsers[i].equals(other.#parsers[i], strict)) {
+            if (!this.#parsers[i].equals(context, other.#parsers[i], strict)) {
                 return false
             }
         }

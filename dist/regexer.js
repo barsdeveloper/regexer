@@ -1,7 +1,8 @@
-/** @template Value */
+/** @template T */
 class Parser {
 
     static indentation = "    "
+
     /** Calling parse() can make it change the overall parsing outcome */
     static isActualParser = true
 
@@ -25,59 +26,139 @@ class Parser {
      * @param {Parser<any>} parser
      */
     dominates(parser) {
-        return this.equals(parser, false)
+        //return this.equals(context, parser, false)
     }
 
-    /** @returns {Parser<Value>} */
+    /** @returns {Parser<T>[]} */
     unwrap() {
-        return null
+        return []
     }
 
     /**
-     * @template {Parser<any>} T
-     * @param {T} parser
-     * @returns {Parser<Value>}
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     * @returns {Parser<any>}
      */
-    wrap(...parser) {
+    wrap(...parsers) {
         return null
     }
 
     /**
      * @param {Context} context
      * @param {Number} position
-     * @returns {Result<Value>}
+     * @returns {Result<T>}
      */
     parse(context, position) {
         return null
     }
 
     /**
-     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse to find the actual parser
+     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {(new (...args: any) => Parser<any>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
      * @returns {Parser<any>}
      */
-    actualParser(...traverse) {
+    actualParser(traverse = [], opaque = []) {
         const self = /** @type {typeof Parser<any>} */(this.constructor);
-        return !self.isActualParser || traverse.find(type => this instanceof type)
-            ? this.unwrap().actualParser()
-            : this
-    }
-
-    /** @returns {Parser<any>} */
-    withActualParser(other) {
-        const self = /** @type {typeof Parser<any>} */(this.constructor);
-        return self.isActualParser ? other : this.wrap(this.unwrap().withActualParser(other))
+        let isTraversable = (!self.isActualParser || traverse.find(type => this instanceof type))
+            && !opaque.find(type => this instanceof type);
+        let unwrapped = isTraversable ? this.unwrap() : undefined;
+        isTraversable &&= unwrapped?.length === 1;
+        return isTraversable ? unwrapped[0].actualParser(traverse, opaque) : this
     }
 
     /**
      * @param {Parser<any>} other
-     * @param {Boolean} strict
+     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {(new (...args: any) => Parser<any>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @returns {Parser<any>}
      */
-    equals(other, strict) {
-        return strict ? this.actualParser() === other.actualParser() : this === other
+    withActualParser(other, traverse = [], opaque = []) {
+        const self = /** @type {typeof Parser<any>} */(this.constructor);
+        let isTraversable = (!self.isActualParser || traverse.some(type => this instanceof type))
+            && !opaque.some(type => this instanceof type);
+        let unwrapped = isTraversable ? this.unwrap() : undefined;
+        isTraversable &&= unwrapped?.length === 1;
+        return isTraversable
+            ? this.wrap(unwrapped[0].withActualParser(other, traverse, opaque))
+            : other
     }
 
-    toString(indent) {
+    /**
+     * @param {Context} context
+     * @param {Parser<any>} other
+     * @param {Boolean} strict
+     */
+    equals(context, other, strict) {
+        let self = /** @type {Parser<any>} */(this);
+        if (self === other) {
+            return true
+        }
+        if (!strict) {
+            self = this.actualParser();
+            other = other.actualParser();
+        }
+        let memoized = context.visited.get(self, other);
+        if (memoized !== undefined) {
+            return memoized
+        } else if (memoized === undefined) {
+            context.visited.set(self, other, true);
+            memoized = self.doEquals(context, other, strict);
+            context.visited.set(self, other, memoized);
+        }
+        return memoized
+    }
+
+    /**
+     * @param {Context} context
+     * @param {Parser<any>} other
+     * @param {Boolean} strict
+     */
+    doEquals(context, other, strict) {
+        return false
+    }
+
+    toString(indent = 0) {
         return `${this.constructor.name} does not implement toString()`
+    }
+}
+
+/** @template T */
+class PairMap {
+
+    /** @type {Map<Parser<any>, Map<Parser<any>, T>>} */
+    #map = new Map()
+
+    /**
+     * @param {Parser<any>} first
+     * @param {Parser<any>} second
+     */
+    get(first, second) {
+        return this.#map.get(first)?.get(second)
+    }
+
+    /**
+     * @param {Parser<any>} first
+     * @param {Parser<any>} second
+     * @param {T} value
+     */
+    set(first, second, value) {
+        let map = this.#map.get(first);
+        if (!map) {
+            map = new Map();
+            this.#map.set(first, map);
+        }
+        map.set(second, value);
+        return this
+    }
+
+    /**
+     * @param {Parser<any>} first
+     * @param {Parser<any>} second
+     * @param {T} value
+     */
+    setGet(first, second, value) {
+        this.set(first, second, value);
+        return value
     }
 }
 
@@ -89,6 +170,7 @@ class Parser {
  *     position: Number,
  * }} Result
  */
+
 
 class Reply {
 
@@ -117,18 +199,18 @@ class Reply {
         })
     }
 
-    /** @param {String} input */
-    static makeContext(input) {
-        return /** @type {Context} */(
-            {
-                input: input
-            }
-        )
+    /** @param {Regexer<Parser<any>>} regexer */
+    static makeContext(regexer, input = "") {
+        return /** @type {Context} */({
+            regexer: regexer,
+            input: input,
+            visited: new PairMap()
+        })
     }
 }
 
 /**
- * @template {[Parser<any>, ...Parser<any>[]]} T
+ * @template {Parser<any>[]} T
  * @extends Parser<ParserValue<T>>
  */
 class AlternativeParser extends Parser {
@@ -142,6 +224,18 @@ class AlternativeParser extends Parser {
     constructor(...parsers) {
         super();
         this.#parsers = parsers;
+    }
+
+    unwrap() {
+        return [...this.#parsers]
+    }
+
+    /**
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     */
+    wrap(...parsers) {
+        return new AlternativeParser(...parsers)
     }
 
     /**
@@ -160,21 +254,16 @@ class AlternativeParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
-        if (this === other) {
-            return true
-        }
+    doEquals(context, other, strict) {
         if (!(other instanceof AlternativeParser) || this.#parsers.length != other.#parsers.length) {
             return false
         }
         for (let i = 0; i < this.#parsers.length; ++i) {
-            if (!this.#parsers[i].equals(other.#parsers[i], strict)) {
+            if (!this.#parsers[i].equals(context, other.#parsers[i], strict)) {
                 return false
             }
         }
@@ -217,15 +306,15 @@ class ChainedParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
     /**
-     * @template {Parser<ParserValue<T>>} P
-     * @param {P} parser
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
      */
-    wrap(...parser) {
-        return new ChainedParser(parser, this.#fn)
+    wrap(...parsers) {
+        return new ChainedParser(parsers[0], this.#fn)
     }
 
     /**
@@ -240,6 +329,17 @@ class ChainedParser extends Parser {
         result = this.#fn(result.value, context.input, result.position)?.getParser().parse(context, result.position)
             ?? Reply.makeFailure(result.position);
         return result
+    }
+
+    /**
+     * @param {Context} context
+     * @param {Parser<any>} other
+     * @param {Boolean} strict
+     */
+    doEquals(context, other, strict) {
+        return other instanceof ChainedParser
+            && this.#fn === other.#fn
+            && this.#parser.equals(context, other.parser, strict)
     }
 
     toString(indent = 0) {
@@ -259,13 +359,11 @@ class FailureParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
+    doEquals(context, other, strict) {
         return other instanceof FailureParser
     }
 
@@ -275,18 +373,18 @@ class FailureParser extends Parser {
 }
 
 /**
- * @template {Parser<any>} P
- * @extends Parser<ParserValue<P>>
+ * @template {Parser<any>} T
+ * @extends Parser<ParserValue<T>>
  */
 class LazyParser extends Parser {
 
     #parser
     static isActualParser = false
 
-    /** @type {P} */
+    /** @type {T} */
     #resolvedPraser
 
-    /** @param {() => Regexer<P>} parser */
+    /** @param {() => Regexer<T>} parser */
     constructor(parser) {
         super();
         this.#parser = parser;
@@ -300,12 +398,18 @@ class LazyParser extends Parser {
     }
 
     unwrap() {
-        return this.resolve()
+        return [this.resolve()]
     }
 
-    wrap(parser) {
-        const regexerConstructor = /** @type {new (...args: any) => Regexer<P>} */(this.#parser().constructor);
-        return new LazyParser(() => new regexerConstructor(parser))
+    /**
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
+     */
+    wrap(...parsers) {
+        const regexerConstructor = /** @type {new (...args: any) => Regexer<typeof parsers[0]>} */(
+            this.#parser().constructor
+        );
+        return new LazyParser(() => new regexerConstructor(parsers[0]))
     }
 
     /**
@@ -318,20 +422,19 @@ class LazyParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (other instanceof LazyParser && this.#parser === other.#parser) {
-            return true
-        }
-        this.resolve();
-        if (!strict) {
-            other = other.actualParser();
-        } else if (other instanceof LazyParser) {
+    doEquals(context, other, strict) {
+        if (other instanceof LazyParser) {
+            if (this.#parser === other.#parser) {
+                return true
+            }
             other = other.resolve();
         }
-        return this.#resolvedPraser === other || this.#resolvedPraser.equals(other, strict)
+        this.resolve();
+        return this.#resolvedPraser.equals(context, other, strict)
     }
 
     toString(indent = 0) {
@@ -373,6 +476,18 @@ class LookaroundParser extends Parser {
         this.#type = type;
     }
 
+    unwrap() {
+        return [this.#parser]
+    }
+
+    /**
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
+     */
+    wrap(...parsers) {
+        return new LookaroundParser(parsers[0], this.#type)
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position
@@ -392,17 +507,15 @@ class LookaroundParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
+    doEquals(context, other, strict) {
         return this === other
             || other instanceof LookaroundParser
             && this.#type === other.#type
-            && this.#parser.equals(other.#parser, strict)
+            && this.#parser.equals(context, other.#parser, strict)
     }
 
     toString(indent = 0) {
@@ -440,13 +553,17 @@ class MapParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
-    /** @param {Parser<any>} parser */
-    wrap(parser) {
-        return new MapParser(parser, this.#mapper)
+    /**
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     */
+    wrap(...parsers) {
+        return new MapParser(parsers[0], this.#mapper)
     }
+
     /**
      * @param {Context} context
      * @param {Number} position
@@ -461,20 +578,14 @@ class MapParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
-        return this === other || (
-            strict
-                ? other instanceof MapParser
-                && this.#mapper === other.#mapper
-                && this.#parser.equals(other.#parser, strict)
-                : this.actualParser().equals(other, strict)
-        )
+    doEquals(context, other, strict) {
+        return other instanceof MapParser
+            && this.#mapper === other.#mapper
+            && this.#parser.equals(context, other.#parser, strict)
     }
 
     toString(indent = 0) {
@@ -541,14 +652,18 @@ class RegExpParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
-        return other instanceof RegExpParser && this.#regexp.source === other.#regexp.source
+    doEquals(context, other, strict) {
+        return other instanceof RegExpParser
+            && (!strict || this.#group === other.#group)
+            && this.#regexp.source === other.#regexp.source
+    }
+
+    toString(indent = 0) {
+        return "/" + this.#regexp.source + "/"
     }
 }
 
@@ -567,6 +682,18 @@ class SequenceParser extends Parser {
     constructor(...parsers) {
         super();
         this.#parsers = parsers;
+    }
+
+    unwrap() {
+        return [...this.#parsers]
+    }
+
+    /**
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
+     */
+    wrap(...parsers) {
+        return new SequenceParser(...parsers)
     }
 
     /**
@@ -588,21 +715,16 @@ class SequenceParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
-        if (this === other) {
-            return true
-        }
+    doEquals(context, other, strict) {
         if (!(other instanceof SequenceParser) || this.#parsers.length != other.#parsers.length) {
             return false
         }
         for (let i = 0; i < this.#parsers.length; ++i) {
-            if (!this.#parsers[i].equals(other.#parsers[i], strict)) {
+            if (!this.#parsers[i].equals(context, other.#parsers[i], strict)) {
                 return false
             }
         }
@@ -662,13 +784,11 @@ class StringParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
+    doEquals(context, other, strict) {
         return other instanceof StringParser && this.#value === other.#value
     }
 
@@ -703,13 +823,11 @@ class SuccessParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
+    doEquals(context, other, strict) {
         return other instanceof SuccessParser
     }
 
@@ -719,8 +837,8 @@ class SuccessParser extends Parser {
 }
 
 /**
- * @template {Parser<any>} P
- * @extends Parser<ParserValue<P>[]>
+ * @template {Parser<any>} T
+ * @extends {Parser<ParserValue<T>[]>}
  */
 class TimesParser extends Parser {
 
@@ -739,7 +857,7 @@ class TimesParser extends Parser {
         return this.#max
     }
 
-    /** @param {P} parser */
+    /** @param {T} parser */
     constructor(parser, min = 0, max = Number.POSITIVE_INFINITY) {
         super();
         if (min > max) {
@@ -751,16 +869,15 @@ class TimesParser extends Parser {
     }
 
     unwrap() {
-        return this.#parser
+        return [this.#parser]
     }
 
     /**
-     * @template {Parser<any>} T
-     * @param {T} parser
-     * @returns {TimesParser<T>}
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
      */
-    wrap(parser) {
-        return new TimesParser(parser, this.#min, this.#max)
+    wrap(...parsers) {
+        return new TimesParser(parsers[0], this.#min, this.#max)
     }
 
     /**
@@ -769,7 +886,7 @@ class TimesParser extends Parser {
      */
     parse(context, position) {
         const value = [];
-        const result = /** @type {Result<ParserValue<P>[]>} */(
+        const result = /** @type {Result<ParserValue<T>[]>} */(
             Reply.makeSuccess(position, value)
         );
         for (let i = 0; i < this.#max; ++i) {
@@ -784,18 +901,15 @@ class TimesParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser();
-        }
-        return this === other
-            || other instanceof TimesParser
+    doEquals(context, other, strict) {
+        return other instanceof TimesParser
             && this.#min === other.#min
             && this.#max === other.#max
-            && this.#parser.equals(other.#parser, strict)
+            && this.#parser.equals(context, other.#parser, strict)
     }
 
     toString(indent = 0) {
@@ -900,9 +1014,9 @@ class Regexer {
         const b = rhs.getParser();
         if (b instanceof a.constructor && !(a instanceof b.constructor)) {
             // typeof b extends typeof a, invert to take advantage of polymorphism
-            return b.equals(a, strict)
+            return b.equals(Reply.makeContext(rhs), a, strict)
         }
-        return a.equals(b, strict)
+        return a.equals(Reply.makeContext(lhs), b, strict)
     }
 
     getParser() {
@@ -914,7 +1028,7 @@ class Regexer {
      * @returns {Result<ParserValue<T>>}
      */
     run(input) {
-        const result = this.#parser.parse(Reply.makeContext(input), 0);
+        const result = this.#parser.parse(Reply.makeContext(this, input), 0);
         return result.status && result.position === input.length ? result : Reply.makeFailure(result.position)
     }
 
@@ -958,7 +1072,7 @@ class Regexer {
     // Combinators
 
     /**
-     * @template {Regexer<any>[]} P
+     * @template {[Regexer<any>, Regexer<any>, ...Regexer<any>[]]} P
      * @param {P} parsers
      * @returns {Regexer<SequenceParser<UnwrapParser<P>>>}
      */
@@ -969,7 +1083,7 @@ class Regexer {
     }
 
     /**
-     * @template {Regexer<any>[]} P
+     * @template {[Regexer<any>, Regexer<any>, ...Regexer<any>[]]} P
      * @param {P} parsers
      * @returns {Regexer<AlternativeParser<UnwrapParser<P>>>}
      */
@@ -987,12 +1101,11 @@ class Regexer {
     }
 
     /**
-     * @template {Regexer<Parser<any>>} P
+     * @template {Regexer<any>} P
      * @param {() => P} parser
      * @returns {Regexer<LazyParser<UnwrapParser<P>>>}
      */
     static lazy(parser) {
-        // @ts-expect-error
         return new Regexer(new LazyParser(parser))
     }
 
@@ -1015,12 +1128,12 @@ class Regexer {
         return this.times(0, n)
     }
 
-    /** @returns {Regexer<T | undefined>} */
+    /** @returns {Regexer<T?>} */
     opt() {
         // @ts-expect-error
         return Regexer.alt(
             this,
-            Regexer.success(undefined)
+            Regexer.success(null)
         )
     }
 
@@ -1031,7 +1144,6 @@ class Regexer {
     sepBy(separator, allowTrailing = false) {
         const results = Regexer.seq(
             this,
-            // @ts-expect-error
             Regexer.seq(separator, this).map(Regexer.#secondElementGetter).many()
         )
             .map(Regexer.#arrayFlatter);

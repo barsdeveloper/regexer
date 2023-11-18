@@ -56,13 +56,11 @@ export default class RegExpParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
+    doEquals(context, other, strict) {
         return other instanceof RegExpParser
             && (!strict || this.#group === other.#group)
             && this.#regexp.source === other.#regexp.source

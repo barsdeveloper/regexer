@@ -50,20 +50,19 @@ export default class LazyParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (other instanceof LazyParser && this.#parser === other.#parser) {
-            return true
-        }
-        this.resolve()
-        if (!strict) {
-            other = other.actualParser()
-        } else if (other instanceof LazyParser) {
+    doEquals(context, other, strict) {
+        if (other instanceof LazyParser) {
+            if (this.#parser === other.#parser) {
+                return true
+            }
             other = other.resolve()
         }
-        return this.#resolvedPraser === other || this.#resolvedPraser.equals(other, strict)
+        this.resolve()
+        return this.#resolvedPraser.equals(context, other, strict)
     }
 
     toString(indent = 0) {

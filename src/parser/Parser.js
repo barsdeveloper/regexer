@@ -26,7 +26,7 @@ export default class Parser {
      * @param {Parser<any>} parser
      */
     dominates(parser) {
-        return this.equals(parser, false)
+        //return this.equals(context, parser, false)
     }
 
     /** @returns {Parser<T>[]} */
@@ -84,11 +84,37 @@ export default class Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        return strict ? this.actualParser() === other.actualParser() : this === other
+    equals(context, other, strict) {
+        let self = /** @type {Parser<any>} */(this)
+        if (self === other) {
+            return true
+        }
+        if (!strict) {
+            self = this.actualParser()
+            other = other.actualParser()
+        }
+        let memoized = context.visited.get(self, other)
+        if (memoized !== undefined) {
+            return memoized
+        } else if (memoized === undefined) {
+            context.visited.set(self, other, true)
+            memoized = self.doEquals(context, other, strict)
+            context.visited.set(self, other, memoized)
+        }
+        return memoized
+    }
+
+    /**
+     * @param {Context} context
+     * @param {Parser<any>} other
+     * @param {Boolean} strict
+     */
+    doEquals(context, other, strict) {
+        return false
     }
 
     toString(indent = 0) {

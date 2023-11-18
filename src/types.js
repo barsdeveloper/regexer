@@ -6,6 +6,11 @@
  */
 
 /**
+ * @template T
+ * @typedef {import("./utility/PairMap.js").default<T>} PairMap
+ */
+
+/**
  * @template V
  * @typedef {import("./parser/Parser.js").default<V>} Parser
  */
@@ -37,10 +42,14 @@
  **/
 
 /**
+ *
+ */
+
+/**
  * @typedef {{
+ *     regexer: Regexer,
  *     input: String,
- *     parser: Regexer,
- *     visited: Set<Parser<any>>,
+ *     visited: PairMap<Boolean>,
  * }} Context
  */
 
@@ -65,9 +74,9 @@
 /**
  * @template T
  * @typedef {T extends [] ? []
- *     : T extends [import("./Regexer.js").default<infer P>] ? [P]
- *     : T extends [import("./Regexer.js").default<infer P>, ...infer Rest] ? [P, ...UnwrapParser<Rest>]
+ *     : T extends [infer R] ? [UnwrapParser<R>]
+ *     : T extends [infer R, ...infer Rest] ? [UnwrapParser<R>, ...UnwrapParser<Rest>]
  *     : T extends import("./Regexer.js").default<infer P> ? P
- *     : any
+ *     : Parser<any>
  * } UnwrapParser
  */

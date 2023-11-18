@@ -52,16 +52,14 @@ export default class ChainedParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
+    doEquals(context, other, strict) {
         return other instanceof ChainedParser
             && this.#fn === other.#fn
-            && this.#parser.equals(other.parser, strict)
+            && this.#parser.equals(context, other.parser, strict)
     }
 
     toString(indent = 0) {

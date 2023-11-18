@@ -41,16 +41,14 @@ export default class RangeParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
+    doEquals(context, other, strict) {
         return other instanceof RangeParser
-            && this.#from.equals(other.#from, strict)
-            && this.#to.equals(other.#to, strict)
+            && this.#from.equals(context, other.#from, strict)
+            && this.#to.equals(context, other.#to, strict)
     }
 
     toString(indent = 0) {

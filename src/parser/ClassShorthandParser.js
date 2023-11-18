@@ -32,13 +32,11 @@ export default class ClassShorthandParser extends RegExpParser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
+    doEquals(context, other, strict) {
         return other instanceof ClassShorthandParser && this.#char == other.#char
     }
 

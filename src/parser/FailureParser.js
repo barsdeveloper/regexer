@@ -13,13 +13,11 @@ export default class FailureParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
+    doEquals(context, other, strict) {
         return other instanceof FailureParser
     }
 

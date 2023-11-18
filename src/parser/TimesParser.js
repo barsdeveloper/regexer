@@ -66,18 +66,15 @@ export default class TimesParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
-        return this === other
-            || other instanceof TimesParser
+    doEquals(context, other, strict) {
+        return other instanceof TimesParser
             && this.#min === other.#min
             && this.#max === other.#max
-            && this.#parser.equals(other.#parser, strict)
+            && this.#parser.equals(context, other.#parser, strict)
     }
 
     toString(indent = 0) {

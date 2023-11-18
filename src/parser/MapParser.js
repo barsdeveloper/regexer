@@ -55,21 +55,14 @@ export default class MapParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        let self = /** @type {Parser<any>} */(this)
-        if (!strict) {
-            other = other.actualParser()
-        }
-        return this === other || (
-            strict
-                ? other instanceof MapParser
-                && this.#mapper === other.#mapper
-                && this.#parser.equals(other.#parser, strict)
-                : this.actualParser().equals(other, strict)
-        )
+    doEquals(context, other, strict) {
+        return other instanceof MapParser
+            && this.#mapper === other.#mapper
+            && this.#parser.equals(context, other.#parser, strict)
     }
 
     toString(indent = 0) {

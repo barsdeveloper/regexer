@@ -40,14 +40,12 @@ export default class AtomicGroupParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
-        return other instanceof AtomicGroupParser && this.#parser.equals(other.#parser, strict)
+    doEquals(context, other, strict) {
+        return other instanceof AtomicGroupParser && this.#parser.equals(context, other.#parser, strict)
     }
 
     toString(indent = 0) {

@@ -43,15 +43,13 @@ export default class EscapedCharParser extends StringParser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
+    doEquals(context, other, strict) {
         return (!strict || other instanceof EscapedCharParser && this.#type === other.#type)
-            && super.equals(other, strict)
+            && super.doEquals(context, other, strict)
     }
 
     toString(indent = 0) {

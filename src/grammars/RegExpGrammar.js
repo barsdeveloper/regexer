@@ -59,8 +59,10 @@ export const R = class extends Regexer {
      * @template {Regexer<Parser<any>>} T
      * @param {T} parser
      * @param {String | Symbol} id
+     * @returns {Regexer<CapturingGroupParser<UnwrapParser<T>>>}
      */
     static grp(parser, id = "") {
+        // @ts-expect-error
         return new Regexer(new CapturingGroupParser(parser.getParser(), id))
     }
 

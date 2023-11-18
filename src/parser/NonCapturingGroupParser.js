@@ -47,16 +47,12 @@ export default class NonCapturingGroupParser extends Parser {
     }
 
     /**
+     * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
-    equals(other, strict) {
-        if (!strict) {
-            other = other.actualParser()
-        }
-        return strict
-            ? other instanceof NonCapturingGroupParser && this.#parser.equals(other.#parser, strict)
-            : this.actualParser().equals(other, strict)
+    doEquals(context, other, strict) {
+        return other instanceof NonCapturingGroupParser && this.#parser.equals(context, other.#parser, strict)
     }
 
     toString(indent = 0) {

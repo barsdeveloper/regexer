@@ -340,6 +340,7 @@ test("Test 12", async ({ page }) => {
     expect(R.equals(lhs, rhs, true)).toBeTruthy()
     expect(R.equals(rhs, lhs, true)).toBeTruthy()
 
+    // It's similar to rhs but with some omissions that still make it functionally equal
     const rhs2 = R.nonGrp(R.seq(
         R.str("Italy"),
         R.regexp(/Switzerland/).chain(fp),
@@ -360,19 +361,21 @@ test("Test 12", async ({ page }) => {
     expect(R.equals(rhs2, lhs)).toBeTruthy()
     expect(R.equals(lhs, rhs2, true)).toBeFalsy()
     expect(R.equals(rhs2, lhs, true)).toBeFalsy()
+    expect(R.equals(lhs, rhs2, true)).toBeFalsy()
+    expect(R.equals(rhs2, lhs, true)).toBeFalsy()
 })
 
 test("Test 13", async ({ page }) => {
     class Grammar {
         /** @type {Regexer<Parser<any>>} */
         static a = R.seq(R.str("a"), R.str("a"), R.lazy(() => this.a))
-        static root = this.a
     }
-    expect(R.equals(
-        Grammar.a,
-        R.seq(R.str("a"), R.str("a"), R.seq(R.str("a"), R.str("a"), R.seq(R.str("a"), R.str("a"), Grammar.a))),
-        true
-    )).toBeTruthy()
+    const other =
+        R.seq(R.str("a"), R.str("a"), R.seq(R.str("a"), R.str("a"), R.seq(R.str("a"), R.str("a"), Grammar.a)))
+    expect(R.equals(Grammar.a, other)).toBeTruthy()
+    expect(R.equals(other, Grammar.a)).toBeTruthy()
+    expect(R.equals(Grammar.a, other, true)).toBeTruthy()
+    expect(R.equals(other, Grammar.a, true)).toBeTruthy()
 })
 
 test("Test 14", async ({ page }) => {
@@ -384,11 +387,11 @@ test("Test 14", async ({ page }) => {
         static d = R.seq(Grammar.c, R.str("d"))
         static root = this.d
     }
-    expect(R.equals(
-        Grammar.root,
-        R.seq(R.alt(R.regexp(/a/).map(f3), Grammar.b, R.seq(Grammar.c, R.str("d"))), R.str("d")),
-        true
-    )).toBeTruthy()
+    const other = R.seq(R.alt(R.regexp(/a/).map(f3), Grammar.b, R.seq(Grammar.c, R.str("d"))), R.str("d"))
+    expect(R.equals(Grammar.root, other)).toBeTruthy()
+    expect(R.equals(other, Grammar.root)).toBeTruthy()
+    expect(R.equals(Grammar.root, other, true)).toBeTruthy()
+    expect(R.equals(other, Grammar.root, true)).toBeTruthy()
 })
 
 test("Test 15", async ({ page }) => {
@@ -397,10 +400,10 @@ test("Test 15", async ({ page }) => {
         static a = R.seq(R.str("a"), R.str("a"), R.lazy(() => this.a))
         static b = R.seq(R.str("a"), R.str("a"), R.lazy(() => this.b))
     }
-    expect(R.equals(
-        Grammar.a,
-        Grammar.b,
-    )).toBeTruthy()
+    expect(R.equals(Grammar.a, Grammar.b)).toBeTruthy()
+    expect(R.equals(Grammar.b, Grammar.a)).toBeTruthy()
+    expect(R.equals(Grammar.a, Grammar.b, true)).toBeTruthy()
+    expect(R.equals(Grammar.b, Grammar.a, true)).toBeTruthy()
 })
 
 test("Test 16", async ({ page }) => {
@@ -409,10 +412,10 @@ test("Test 16", async ({ page }) => {
         static a = R.seq(R.str("a"), R.str("a"), R.lazy(() => this.a))
         static b = R.seq(R.str("a"), R.lazy(() => this.b))
     }
-    expect(R.equals(
-        Grammar.a,
-        Grammar.b,
-    )).toBeFalsy()
+    expect(R.equals(Grammar.a, Grammar.b)).toBeFalsy()
+    expect(R.equals(Grammar.b, Grammar.a)).toBeFalsy()
+    expect(R.equals(Grammar.a, Grammar.b, true)).toBeFalsy()
+    expect(R.equals(Grammar.b, Grammar.a, true)).toBeFalsy()
 })
 
 test("Test 17", async ({ page }) => {
@@ -421,8 +424,26 @@ test("Test 17", async ({ page }) => {
         static a = R.seq(R.str("a"), R.lazy(() => this.a))
         static b = R.seq(R.str("a"), R.seq(R.str("a"), R.seq(R.str("a"), R.lazy(() => this.b))))
     }
-    expect(R.equals(
-        Grammar.a,
-        Grammar.b,
-    )).toBeTruthy()
+    expect(R.equals(Grammar.a, Grammar.b)).toBeTruthy()
+    expect(R.equals(Grammar.b, Grammar.a)).toBeTruthy()
+    expect(R.equals(Grammar.a, Grammar.b, true)).toBeTruthy()
+    expect(R.equals(Grammar.b, Grammar.a, true)).toBeTruthy()
+})
+
+test("Test 18", async ({ page }) => {
+    class Grammar {
+        /** @type {Regexer<Parser<any>>} */
+        static a1 = R.seq(R.grp(R.str("a").many()), R.lazy(() => this.a1), R.str("x"))
+        /** @type {Regexer<Parser<any>>} */
+        static a2 = R.seq(R.grp(R.str("a").many()), R.lazy(() => this.a2), R.str("y"))
+        static b = R.seq(R.grp(R.str("a").many()), R.lazy(() => R.seq(R.grp(R.str("a").many()), R.lazy(() => this.b), R.str("y"))), R.str("y"))
+    }
+    expect(R.equals(Grammar.a2, Grammar.b)).toBeTruthy()
+    expect(R.equals(Grammar.b, Grammar.a2)).toBeTruthy()
+    expect(R.equals(Grammar.a2, Grammar.b, true)).toBeTruthy()
+    expect(R.equals(Grammar.b, Grammar.a2, true)).toBeTruthy()
+    expect(R.equals(Grammar.a1, Grammar.b)).toBeFalsy()
+    expect(R.equals(Grammar.b, Grammar.a1)).toBeFalsy()
+    expect(R.equals(Grammar.a1, Grammar.b, true)).toBeFalsy()
+    expect(R.equals(Grammar.b, Grammar.a1, true)).toBeFalsy()
 })

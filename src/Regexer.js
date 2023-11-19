@@ -98,10 +98,6 @@ export default class Regexer {
     static equals(lhs, rhs, strict = false) {
         const a = lhs.getParser()
         const b = rhs.getParser()
-        if (b instanceof a.constructor && !(a instanceof b.constructor)) {
-            // typeof b extends typeof a, invert to take advantage of polymorphism
-            return b.equals(Reply.makeContext(rhs), a, strict)
-        }
         return a.equals(Reply.makeContext(lhs), b, strict)
     }
 

@@ -85,25 +85,35 @@ export default class Parser {
 
     /**
      * @param {Context} context
-     * @param {Parser<any>} other
+     * @param {Parser<any>} rhs
      * @param {Boolean} strict
      */
-    equals(context, other, strict) {
-        let self = /** @type {Parser<any>} */(this)
-        if (self === other) {
+    equals(context, rhs, strict) {
+        let lhs = /** @type {Parser<any>} */(this)
+        if (lhs === rhs) {
             return true
         }
         if (!strict) {
-            self = this.actualParser()
-            other = other.actualParser()
+            lhs = this.actualParser()
+            rhs = rhs.actualParser()
         }
-        let memoized = context.visited.get(self, other)
+        if (
+            rhs instanceof lhs.constructor && !(lhs instanceof rhs.constructor)
+            // @ts-expect-error
+            || rhs.resolve && !lhs.resolve
+        ) {
+            // Take advantage of polymorphism or compare a lazy against a non lazy (not the other way around)
+            const temp = lhs
+            lhs = rhs
+            rhs = temp
+        }
+        let memoized = context.visited.get(lhs, rhs)
         if (memoized !== undefined) {
             return memoized
         } else if (memoized === undefined) {
-            context.visited.set(self, other, true)
-            memoized = self.doEquals(context, other, strict)
-            context.visited.set(self, other, memoized)
+            context.visited.set(lhs, rhs, true)
+            memoized = lhs.doEquals(context, rhs, strict)
+            context.visited.set(lhs, rhs, memoized)
         }
         return memoized
     }

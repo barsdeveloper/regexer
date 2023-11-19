@@ -7,6 +7,11 @@ import Reply from "../Reply.js"
  */
 export default class TimesParser extends Parser {
 
+    #backtracking = false
+    get backtracking() {
+        return this.#backtracking
+    }
+
     #parser
     get parser() {
         return this.#parser
@@ -42,7 +47,17 @@ export default class TimesParser extends Parser {
      * @param {P} parsers
      */
     wrap(...parsers) {
-        return /** @type {TimesParser<typeof parsers[0]>} */(new TimesParser(parsers[0], this.#min, this.#max))
+        const result = /** @type {TimesParser<typeof parsers[0]>} */(new TimesParser(parsers[0], this.#min, this.#max))
+        if (this.#backtracking) {
+            result.#backtracking = true
+        }
+        return result
+    }
+
+    asBacktracking() {
+        const result = new TimesParser(this.#parser, this.#min, this.#max)
+        result.#backtracking = true
+        return result
     }
 
     /**
@@ -72,6 +87,7 @@ export default class TimesParser extends Parser {
      */
     doEquals(context, other, strict) {
         return other instanceof TimesParser
+            && this.#backtracking === other.#backtracking
             && this.#min === other.#min
             && this.#max === other.#max
             && this.#parser.equals(context, other.#parser, strict)

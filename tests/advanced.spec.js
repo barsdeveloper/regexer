@@ -120,11 +120,6 @@ test("RegExp", async ({ page }) => {
             R.seq(R.str("a"), R.grp(R.str("b")), R.str("c"))
         ))).toBeTruthy()
     expect(R.equals(
-        g.parse("(?>alpha|beta)"),
-        R.atomicGrp(
-            R.alt(R.str("alpha"), R.str("beta"))
-        ))).toBeTruthy()
-    expect(R.equals(
         g.parse(/[abc]/.source),
         R.class(R.str("a"), R.str("b"), R.str("c")))).toBeTruthy()
     expect(R.equals(

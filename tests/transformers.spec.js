@@ -443,23 +443,6 @@ test("Remove trivial parsers 5", ({ page }) => {
     ).toBeTruthy()
 })
 
-// test("Test 1", ({ page }) => {
-//     expect(R.equals(
-//         transformer.transform(
-//             R.alt(
-//                 R.str("a"),
-//                 R.str("b"),
-//                 R.success(),
-//                 R.str("c"),
-//                 R.str("d"),
-//                 R.str("e")
-//             )
-//         ),
-//         R.alt(R.str("a"), R.str("b"), R.success()),
-//         true,
-//     )).toBeTruthy()
-// })
-
 // test("Test 2", ({ page }) => {
 //     expect(R.equals(
 //         transformer.transform(

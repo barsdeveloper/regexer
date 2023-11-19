@@ -7,6 +7,11 @@ import Reply from "../Reply.js"
  */
 export default class AlternativeParser extends Parser {
 
+    #backtracking = false
+    get backtracking() {
+        return this.#backtracking
+    }
+
     #parsers
     get parsers() {
         return this.#parsers
@@ -27,7 +32,17 @@ export default class AlternativeParser extends Parser {
      * @param {T} parsers
      */
     wrap(...parsers) {
-        return new AlternativeParser(...parsers)
+        const result = new AlternativeParser(...parsers)
+        if (this.#backtracking) {
+            result.#backtracking = true
+        }
+        return result
+    }
+
+    asBacktracking() {
+        const result = this.wrap(...this.#parsers)
+        result.#backtracking = true
+        return result
     }
 
     /**
@@ -51,7 +66,11 @@ export default class AlternativeParser extends Parser {
      * @param {Boolean} strict
      */
     doEquals(context, other, strict) {
-        if (!(other instanceof AlternativeParser) || this.#parsers.length != other.#parsers.length) {
+        if (
+            !(other instanceof AlternativeParser)
+            || this.#parsers.length != other.#parsers.length
+            || this.#backtracking !== other.#backtracking
+        ) {
             return false
         }
         for (let i = 0; i < this.#parsers.length; ++i) {

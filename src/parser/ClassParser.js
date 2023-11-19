@@ -3,7 +3,7 @@ import AlternativeParser from "./AlternativeParser.js"
 import Parser from "./Parser.js"
 
 /**
- * @template {[Parser<any>, ...Parser<any>[]]} T
+ * @template {Parser<any>[]} T
  * @extends AlternativeParser<T>
  */
 export default class ClassParser extends AlternativeParser {
@@ -20,6 +20,14 @@ export default class ClassParser extends AlternativeParser {
     constructor(negative, ...parsers) {
         super(...parsers)
         this.#negative = negative
+    }
+
+    /**
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     */
+    wrap(...parsers) {
+        return new ClassParser(this.#negative, ...parsers)
     }
 
     /**

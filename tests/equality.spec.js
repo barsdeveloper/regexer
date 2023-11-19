@@ -1,5 +1,6 @@
 import { R } from "../src/grammars/RegExpGrammar.js"
 import { test, expect } from "@playwright/test"
+import BasicR from "../src/Regexer.js"
 import EscapedCharParser from "../src/parser/EscapedCharParser.js"
 
 /** @param {String} v */
@@ -446,4 +447,48 @@ test("Test 18", async ({ page }) => {
     expect(R.equals(Grammar.b, Grammar.a1)).toBeFalsy()
     expect(R.equals(Grammar.a1, Grammar.b, true)).toBeFalsy()
     expect(R.equals(Grammar.b, Grammar.a1, true)).toBeFalsy()
+})
+
+test("Test 19", async ({ page }) => {
+    const RegexpR = R
+    expect(R.equals(BasicR.str("str"), RegexpR.str("str"), true)).toBeTruthy()
+    expect(R.equals(RegexpR.regexp(/regexp/), BasicR.regexp(/regexp/), true)).toBeTruthy()
+    // Alt are not equal because alt originating from a regex is backtracking
+    expect(R.equals(
+        RegexpR.alt(RegexpR.str("alpha"), BasicR.str("beta")),
+        BasicR.alt(BasicR.str("alpha"), RegexpR.str("beta")),
+        true
+    )).toBeFalsy()
+    {
+        // Alt are not equal because alt originating from a regex is backtracking
+        const a = BasicR.alt(RegexpR.str("alpha"), BasicR.str("beta"))
+        const b = RegexpR.alt(BasicR.str("alpha"), RegexpR.str("beta"))
+        expect(R.equals(a, b)).toBeFalsy()
+        expect(R.equals(b, a)).toBeFalsy()
+        expect(R.equals(a, b, true)).toBeFalsy()
+        expect(R.equals(b, a, true)).toBeFalsy()
+    }
+    expect(R.equals(
+        BasicR.seq(RegexpR.str("alpha"), BasicR.str("beta")),
+        RegexpR.seq(BasicR.str("alpha"), RegexpR.str("beta")),
+        true
+    )).toBeTruthy()
+    {
+        // Times are not equal because times originating from a regex is backtracking
+        const a = RegexpR.str("").map(f2).atLeast(2)
+        const b = BasicR.str("").map(f1).atLeast(2)
+        expect(R.equals(a, b)).toBeFalsy()
+        expect(R.equals(b, a)).toBeFalsy()
+        expect(R.equals(a, b, true)).toBeFalsy()
+        expect(R.equals(b, a, true)).toBeFalsy()
+    }
+    {
+        // Class are not equal because class originating from a regex is backtracking
+        const a = RegexpR.class(RegexpR.str("a"), RegexpR.str("b"))
+        const b = RegexpR.alt(RegexpR.str("a"), RegexpR.str("b"))
+        expect(R.equals(a, b)).toBeTruthy()
+        expect(R.equals(b, a)).toBeTruthy()
+        expect(R.equals(a, b, true)).toBeFalsy()
+        expect(R.equals(b, a, true)).toBeFalsy()
+    }
 })

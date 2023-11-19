@@ -1,3 +1,4 @@
+import AlternativeParser from "../parser/AlternativeParser.js"
 import AnchorParser, { AnchorType } from "../parser/AnchorParser.js"
 import AnyCharParser from "../parser/AnyCharParser.js"
 import AtomicGroupParser from "../parser/AtomicGroupParser.js"
@@ -8,23 +9,33 @@ import EscapedCharParser from "../parser/EscapedCharParser.js"
 import LookaroundParser from "../parser/LookaroundParser.js"
 import NonCapturingGroupParser from "../parser/NonCapturingGroupParser.js"
 import Parser from "../parser/Parser.js"
-import Regexer from "../Regexer.js"
 import RangeParser from "../parser/RangeParser.js"
+import Regexer from "../Regexer.js"
 import StringParser from "../parser/StringParser.js"
+import TimesParser from "../parser/TimesParser.js"
 
 export const R = class extends Regexer {
+
+    /**
+     * @template {[Regexer<any>, Regexer<any>, ...Regexer<any>[]]} P
+     * @param {P} parsers
+     * @returns {Regexer<AlternativeParser<UnwrapParser<P>>>}
+     */
+    static alt(...parsers) {
+        return new this(super.alt(...parsers).getParser().asBacktracking())
+    }
 
     /**
      * @template {String} S
      * @param {S} char
      */
     static escapedChar(char, type = EscapedCharParser.Type.NORMAL) {
-        return new Regexer(new EscapedCharParser(char, type))
+        return new this(new EscapedCharParser(char, type))
     }
 
     /** @param {keyof typeof ClassMetacharacter} type */
     static classShorthand(type) {
-        return new Regexer(new ClassShorthandParser(type))
+        return new this(new ClassShorthandParser(type))
     }
 
     /**
@@ -33,8 +44,9 @@ export const R = class extends Regexer {
      * @returns {Regexer<ClassParser<UnwrapParser<P>>>}
      */
     static class(...parsers) {
-        // @ts-expect-error
-        return new Regexer(new ClassParser(false, ...parsers.map(p => p.getParser())))
+        return new this(
+            (new ClassParser(false, ...parsers.map(p => p.getParser()))).asBacktracking()
+        )
     }
 
     /**
@@ -43,8 +55,7 @@ export const R = class extends Regexer {
      * @returns {Regexer<ClassParser<UnwrapParser<P>>>}
      */
     static negClass(...parsers) {
-        // @ts-expect-error
-        return new Regexer(new ClassParser(true, ...parsers.map(p => p.getParser())))
+        return new this(new ClassParser(true, ...parsers.map(p => p.getParser())))
     }
 
     /**
@@ -52,7 +63,7 @@ export const R = class extends Regexer {
      * @param {P} parser
      */
     static lookaround(parser, type = LookaroundParser.Type.POSITIVE_AHEAD) {
-        return new Regexer(new LookaroundParser(parser.getParser(), type))
+        return new this(new LookaroundParser(parser.getParser(), type))
     }
 
     /**
@@ -62,8 +73,7 @@ export const R = class extends Regexer {
      * @returns {Regexer<CapturingGroupParser<UnwrapParser<T>>>}
      */
     static grp(parser, id = "") {
-        // @ts-expect-error
-        return new Regexer(new CapturingGroupParser(parser.getParser(), id))
+        return new this(new CapturingGroupParser(parser.getParser(), id))
     }
 
     /**
@@ -71,7 +81,7 @@ export const R = class extends Regexer {
      * @param {T} parser
      */
     static nonGrp(parser) {
-        return new Regexer(new NonCapturingGroupParser(parser.getParser()))
+        return new this(new NonCapturingGroupParser(parser.getParser()))
     }
 
     /**
@@ -79,23 +89,23 @@ export const R = class extends Regexer {
      * @param {T} parser
      */
     static atomicGrp(parser) {
-        return new Regexer(new AtomicGroupParser(parser.getParser()))
+        return new this(new AtomicGroupParser(parser.getParser()))
     }
 
     static lineStart() {
-        return new Regexer(new AnchorParser(AnchorType.LINE_START))
+        return new this(new AnchorParser(AnchorType.LINE_START))
     }
 
     static lineEnd() {
-        return new Regexer(new AnchorParser(AnchorType.LINE_END))
+        return new this(new AnchorParser(AnchorType.LINE_END))
     }
 
     static wordBoundary() {
-        return new Regexer(new AnchorParser(AnchorType.WORD_BOUNDARY))
+        return new this(new AnchorParser(AnchorType.WORD_BOUNDARY))
     }
 
     static anyChar(dotAll = false) {
-        return new Regexer(new AnyCharParser(dotAll))
+        return new this(new AnyCharParser(dotAll))
     }
 
     /**
@@ -105,7 +115,13 @@ export const R = class extends Regexer {
      * @param {Regexer<StringParser<B>>} to
      */
     static range(from, to) {
-        return new Regexer(new RangeParser(from.getParser(), to.getParser()))
+        return new this(new RangeParser(from.getParser(), to.getParser()))
+    }
+
+    /** @param {Number} min */
+    times(min, max = min) {
+        const result = new TimesParser(this.getParser(), min, max)
+        return new this.Self(result.asBacktracking())
     }
 }
 
@@ -172,7 +188,6 @@ export default class RegExpGrammar {
     )
 
     static #range = R.seq(this.#rangeEndpoint, R.str("-"), this.#rangeEndpoint)
-        // @ts-expect-error
         .map(([from, _, to]) => R.range(from, to))
 
     static #class = R.seq(
@@ -225,8 +240,8 @@ export default class RegExpGrammar {
         R.seq(R.str("(?<!"), R.lazy(() => this.regexp), R.str(")"))
             .map(([l, value, r]) => R.lookaround(value, LookaroundParser.Type.NEGATIVE_BEHIND)),
         // Atomic group
-        R.seq(R.str("(?>"), R.lazy(() => this.regexp), R.str(")"))
-            .map(([l, value, r]) => R.atomicGrp(value)),
+        // R.seq(R.str("(?>"), R.lazy(() => this.regexp), R.str(")"))
+        //     .map(([l, value, r]) => R.atomicGrp(value)),
     )
 
     static #expression = R.alt(

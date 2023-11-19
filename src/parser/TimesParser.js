@@ -42,7 +42,7 @@ export default class TimesParser extends Parser {
      * @param {P} parsers
      */
     wrap(...parsers) {
-        return new TimesParser(parsers[0], this.#min, this.#max)
+        return /** @type {TimesParser<typeof parsers[0]>} */(new TimesParser(parsers[0], this.#min, this.#max))
     }
 
     /**

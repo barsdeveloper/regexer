@@ -35,8 +35,8 @@ export default class Parser {
     }
 
     /**
-     * @template {Parser<any>[]} T
-     * @param {T} parsers
+     * @template {Parser<any>[]} P
+     * @param {P} parsers
      * @returns {Parser<any>}
      */
     wrap(...parsers) {

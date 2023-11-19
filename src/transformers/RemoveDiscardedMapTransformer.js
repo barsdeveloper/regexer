@@ -20,6 +20,7 @@ export default class RemoveDiscardedMapTransformer extends ParentChildTransforme
         if (parent instanceof MapParser && child instanceof LookaroundParser) {
             return parent.parser.withActualParser(child, this.traverse, this.opaque)
         }
+        return parent
     }
 
     /**
@@ -32,5 +33,6 @@ export default class RemoveDiscardedMapTransformer extends ParentChildTransforme
         if (parent instanceof LookaroundParser && child instanceof MapParser) {
             return [child.parser]
         }
+        return [child]
     }
 }

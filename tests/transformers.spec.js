@@ -431,6 +431,18 @@ test("Remove trivial parsers 4", ({ page }) => {
     ).toBeTruthy()
 })
 
+test("Remove trivial parsers 5", ({ page }) => {
+    const removeTrivialParsers = new RemoveTrivialParsersTransformer()
+    expect(
+        R.equals(
+            removeTrivialParsers.transform(
+                R.seq(R.number, R.grp(R.nonGrp(R.success()).map(f1).atLeast(20)).map(f3), R.str("a"))
+            ),
+            R.seq(R.number, R.str("a"))
+        )
+    ).toBeTruthy()
+})
+
 // test("Test 1", ({ page }) => {
 //     expect(R.equals(
 //         transformer.transform(

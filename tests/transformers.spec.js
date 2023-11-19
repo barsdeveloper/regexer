@@ -3,7 +3,8 @@ import InlineParsersTransformer from "../src/transformers/InlineParsersTransform
 import LookaroundParser from "../src/parser/LookaroundParser.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
-import RemoveUselessLazyTransformer from "../src/transformers/RemoveLazyTransformer.js"
+import RemoveLazyTransformer from "../src/transformers/RemoveLazyTransformer.js"
+import RemoveTrivialParsersTransformer from "../src/transformers/RemoveTrivialParsersTransformer.js"
 
 const f1 = v => "f1"
 const f2 = v => "f2"
@@ -352,8 +353,8 @@ test("Remove discarded map 2", ({ page }) => {
     ).toBeTruthy()
 })
 
-test("Remove useless lazy", ({ page }) => {
-    const removeUselessLazy = new RemoveUselessLazyTransformer()
+test("Remove lazy", ({ page }) => {
+    const removeLazy = new RemoveLazyTransformer()
     class Grammar {
         static a = R.str("a")
         static b = R.str("b").map(f1)
@@ -364,7 +365,7 @@ test("Remove useless lazy", ({ page }) => {
     }
     expect(
         R.equals(
-            removeUselessLazy.transform(Grammar.root),
+            removeLazy.transform(Grammar.root),
             R.alt(
                 R.seq(
                     R.alt(Grammar.a, Grammar.b),
@@ -373,6 +374,58 @@ test("Remove useless lazy", ({ page }) => {
                 ),
                 Grammar.b
             ),
+            true
+        )
+    ).toBeTruthy()
+})
+
+test("Remove trivial parsers 1", ({ page }) => {
+    const removeTrivialParsers = new RemoveTrivialParsersTransformer()
+    expect(
+        R.equals(
+            removeTrivialParsers.transform(
+                R.alt(R.grp(R.str("a").map(f2)), R.nonGrp(R.str("b")), R.success(), R.regexp(/c/).many(), R.regexp(/d/))
+            ),
+            R.alt(R.grp(R.str("a").map(f2)), R.nonGrp(R.str("b"))),
+            true
+        )
+    ).toBeTruthy()
+})
+
+test("Remove trivial parsers 2", ({ page }) => {
+    const removeTrivialParsers = new RemoveTrivialParsersTransformer()
+    expect(
+        R.equals(
+            removeTrivialParsers.transform(
+                R.alt(R.str("a"), R.failure(), R.str("b"), R.failure(), R.str("c"), R.str("d"), R.failure())
+            ),
+            R.alt(R.str("a"), R.str("b"), R.str("c"), R.str("d")),
+            true
+        )
+    ).toBeTruthy()
+})
+
+test("Remove trivial parsers 3", ({ page }) => {
+    const removeTrivialParsers = new RemoveTrivialParsersTransformer()
+    expect(
+        R.equals(
+            removeTrivialParsers.transform(
+                R.seq(R.str("a"), R.success(), R.str("b"), R.success(), R.str("c"))
+            ),
+            R.seq(R.str("a"), R.str("b"), R.str("c")),
+            true
+        )
+    ).toBeTruthy()
+})
+
+test("Remove trivial parsers 4", ({ page }) => {
+    const removeTrivialParsers = new RemoveTrivialParsersTransformer()
+    expect(
+        R.equals(
+            removeTrivialParsers.transform(
+                R.seq(R.str("a"), R.str("b"), R.failure(), R.str("c"))
+            ),
+            R.failure(),
             true
         )
     ).toBeTruthy()

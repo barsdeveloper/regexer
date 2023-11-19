@@ -21,6 +21,7 @@ export default class ParentChildTransformer extends Transformer {
     }
 
     /**
+     * @protected
      * @template T
      * @param {Parser<T>} parser
      * @return {Parser<T>}
@@ -34,14 +35,16 @@ export default class ParentChildTransformer extends Transformer {
                 if (this.#childTypes.find(t => current instanceof t)) {
                     const newParent = this.doTransformParent(
                         /** @type {UnionFromArray<ParentTypes>} */(parser),
-                        /** @type {UnionFromArray<ChildTypes>} */(current)
+                        /** @type {UnionFromArray<ChildTypes>} */(current),
+                        i
                     )
                     if (newParent) {
                         return this.doTransform(newParent)
                     }
                     const newChildren = this.doTransformChild(
                         /** @type {UnionFromArray<ParentTypes>} */(parser),
-                        /** @type {UnionFromArray<ChildTypes>} */(current)
+                        /** @type {UnionFromArray<ChildTypes>} */(current),
+                        i
                     )
                     if (newChildren) {
                         children.splice(
@@ -74,20 +77,24 @@ export default class ParentChildTransformer extends Transformer {
     }
 
     /**
+     * @protected
      * @param {UnionFromArray<ParentTypes>} parent
      * @param {UnionFromArray<ChildTypes>} child
+     * @param {Number} index
      * @returns {Parser<any>?}
      */
-    doTransformParent(parent, child) {
+    doTransformParent(parent, child, index) {
         return null
     }
 
     /**
+     * @protected
      * @param {UnionFromArray<ParentTypes>} parent
      * @param {UnionFromArray<ChildTypes>} child
+     * @param {Number} index
      * @returns {Parser<any>[]?}
      */
-    doTransformChild(parent, child) {
+    doTransformChild(parent, child, index) {
         return null
     }
 }

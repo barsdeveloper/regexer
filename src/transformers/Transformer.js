@@ -36,6 +36,7 @@ export default class Transformer {
     }
 
     /**
+     * @protected
      * @template T
      * @param {Parser<T>} parser
      * @return {Parser<T>}

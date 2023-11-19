@@ -10,11 +10,13 @@ export default class InlineParsersTransformer extends ParentChildTransformer {
     }
 
     /**
+     * @protected
      * @param {AlternativeParser<Parser<any>[]> | SequenceParser<Parser<any>[]>} parent
      * @param {AlternativeParser<Parser<any>[]> | SequenceParser<Parser<any>[]>} child
+     * @param {Number} index
      * @returns {Parser<any>[]}
      */
-    doTransformChild(parent, child) {
+    doTransformChild(parent, child, index) {
         return parent instanceof AlternativeParser && child instanceof AlternativeParser
             || parent instanceof SequenceParser && child instanceof SequenceParser
             ? child.unwrap()

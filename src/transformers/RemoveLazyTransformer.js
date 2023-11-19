@@ -4,6 +4,7 @@ import Transformer from "./Transformer.js"
 export default class RemoveLazyTransformer extends Transformer {
 
     /**
+     * @protected
      * @template T
      * @param {Parser<T>} parser
      * @return {Parser<T>}

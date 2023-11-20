@@ -14,7 +14,7 @@ const fp = v => R.str("a string")
 test("Inline parsers 1", ({ page }) => {
     const inlineParsers = new InlineParsersTransformer()
     expect(R.equals(
-        inlineParsers.transform(
+        inlineParsers.run(
             R.alt(
                 R.grp(
                     R.grp(
@@ -79,7 +79,7 @@ test("Inline parsers 1", ({ page }) => {
 test("Inline parsers 2", ({ page }) => {
     const inlineParsers = new InlineParsersTransformer()
     expect(R.equals(
-        inlineParsers.transform(
+        inlineParsers.run(
             R.nonGrp(
                 R.grp(
                     R.seq(
@@ -191,7 +191,7 @@ test("Inline parsers 3", ({ page }) => {
     const inlineParsers = new InlineParsersTransformer()
     expect(
         R.equals(
-            inlineParsers.transform(
+            inlineParsers.run(
                 R.lazy(() => R.grp(
                     R.seq(
                         R.anyChar().times(20),
@@ -299,7 +299,7 @@ test("Remove discarded map 1", ({ page }) => {
     const removeDiscardedMap = new RemoveDiscardedMapTransformer()
     expect(
         R.equals(
-            removeDiscardedMap.transform(
+            removeDiscardedMap.run(
                 R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta").map(f1)).map(f2)))
             ),
             R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta")))),
@@ -313,7 +313,7 @@ test("Remove discarded map 2", ({ page }) => {
     const numberWithoutMap = R.regexp(R.number.getParser().parser.regexp)
     expect(
         R.equals(
-            removeDiscardedMap.transform(
+            removeDiscardedMap.run(
                 R.grp(R.alt(
                     R.seq(
                         R.lookahead(R.nonGrp(R.str("Ireland").map(f1))).map(f2),
@@ -365,7 +365,7 @@ test("Remove lazy", ({ page }) => {
     }
     expect(
         R.equals(
-            removeLazy.transform(Grammar.root),
+            removeLazy.run(Grammar.root),
             R.alt(
                 R.seq(
                     R.alt(Grammar.a, Grammar.b),
@@ -383,7 +383,7 @@ test("Remove trivial parsers 1", ({ page }) => {
     const removeTrivialParsers = new RemoveTrivialParsersTransformer()
     expect(
         R.equals(
-            removeTrivialParsers.transform(
+            removeTrivialParsers.run(
                 R.alt(R.grp(R.str("a").map(f2)), R.nonGrp(R.str("b")), R.success(), R.regexp(/c/).many(), R.regexp(/d/))
             ),
             R.alt(R.grp(R.str("a").map(f2)), R.nonGrp(R.str("b"))),
@@ -396,7 +396,7 @@ test("Remove trivial parsers 2", ({ page }) => {
     const removeTrivialParsers = new RemoveTrivialParsersTransformer()
     expect(
         R.equals(
-            removeTrivialParsers.transform(
+            removeTrivialParsers.run(
                 R.alt(R.str("a"), R.failure(), R.str("b"), R.failure(), R.str("c"), R.str("d"), R.failure())
             ),
             R.alt(R.str("a"), R.str("b"), R.str("c"), R.str("d")),
@@ -409,7 +409,7 @@ test("Remove trivial parsers 3", ({ page }) => {
     const removeTrivialParsers = new RemoveTrivialParsersTransformer()
     expect(
         R.equals(
-            removeTrivialParsers.transform(
+            removeTrivialParsers.run(
                 R.seq(R.str("a"), R.success(), R.str("b"), R.success(), R.str("c"))
             ),
             R.seq(R.str("a"), R.str("b"), R.str("c")),
@@ -422,7 +422,7 @@ test("Remove trivial parsers 4", ({ page }) => {
     const removeTrivialParsers = new RemoveTrivialParsersTransformer()
     expect(
         R.equals(
-            removeTrivialParsers.transform(
+            removeTrivialParsers.run(
                 R.seq(R.str("a"), R.str("b"), R.failure(), R.str("c"))
             ),
             R.failure(),
@@ -435,7 +435,7 @@ test("Remove trivial parsers 5", ({ page }) => {
     const removeTrivialParsers = new RemoveTrivialParsersTransformer()
     expect(
         R.equals(
-            removeTrivialParsers.transform(
+            removeTrivialParsers.run(
                 R.seq(R.number, R.grp(R.nonGrp(R.success()).map(f1).atLeast(20)).map(f3), R.str("a"))
             ),
             R.seq(R.number, R.str("a"))

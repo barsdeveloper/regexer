@@ -5,28 +5,25 @@ export default class RemoveLazyTransformer extends Transformer {
 
     /**
      * @protected
-     * @template T
-     * @param {Parser<T>} parser
-     * @return {Parser<T>}
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @param {Map<Parser<any>, Parser<any>>} visited
+     * @return {T}
      */
-    doTransform(parser, visited = new Set()) {
-        if (visited.has(this)) {
-            return parser
-        }
-        visited.add(this)
+    doTransform(parser, visited) {
         let changed = false
         let children = parser.unwrap()
         if (parser instanceof LazyParser) {
-            return this.doTransform(children[0], visited)
+            return /** @type {T} */(this.transform(children[0], visited))
         } else {
             children = children.map(child => {
-                const transformed = this.doTransform(child, visited)
+                const transformed = this.transform(child, visited)
                 changed ||= child !== transformed
                 return transformed
             })
         }
         if (changed) {
-            return parser.wrap(...children)
+            return /** @type {T} */(parser.wrap(...children))
         }
         return parser
     }

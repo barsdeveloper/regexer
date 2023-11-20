@@ -24,10 +24,10 @@ export default class Transformer {
      * @param {Regexer<T>} regexer
      * @return {Regexer<T>}
      */
-    transform(regexer) {
-        const actualParser = regexer.getParser().actualParser(this.traverse, this.opaque)
-        let transformed = this.doTransform(actualParser)
-        if (actualParser !== transformed) {
+    run(regexer) {
+        const parser = regexer.getParser().actualParser(this.traverse, this.opaque)
+        let transformed = this.transform(parser, new Map())
+        if (parser !== transformed) {
             transformed = regexer.getParser().withActualParser(transformed, this.traverse, this.opaque)
             // @ts-expect-error
             return new Regexer(transformed, true)
@@ -37,11 +37,30 @@ export default class Transformer {
 
     /**
      * @protected
-     * @template T
-     * @param {Parser<T>} parser
-     * @return {Parser<T>}
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @param {Map<Parser<any>, Parser<any>>} visited
+     * @return {T}
      */
-    doTransform(parser) {
+    transform(parser, visited) {
+        let result = /** @type {T} */(visited.get(parser))
+        if (result) {
+            return result
+        }
+        visited.set(parser, parser)
+        result = this.doTransform(parser, visited)
+        visited.set(parser, result)
+        return result
+    }
+
+    /**
+     * @protected
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @param {Map<Parser<any>, Parser<any>>} visited
+     * @return {T}
+     */
+    doTransform(parser, visited) {
         return parser
     }
 }

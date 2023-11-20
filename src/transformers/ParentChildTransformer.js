@@ -22,11 +22,12 @@ export default class ParentChildTransformer extends Transformer {
 
     /**
      * @protected
-     * @template T
-     * @param {Parser<T>} parser
-     * @return {Parser<T>}
+     * @template {Parser<any>} T
+     * @param {T} parser
+     * @param {Map<Parser<any>, Parser<any>>} visited
+     * @return {T}
      */
-    doTransform(parser) {
+    doTransform(parser, visited) {
         let changed = false
         let children = parser.unwrap()
         if (this.#parentTypes.find(t => parser instanceof t)) {
@@ -39,7 +40,7 @@ export default class ParentChildTransformer extends Transformer {
                         i
                     )
                     if (newParent != parser) {
-                        return this.doTransform(newParent)
+                        return /** @type {T} */(this.transform(newParent, visited))
                     }
                     const newChildren = this.doTransformChild(
                         /** @type {UnionFromArray<ParentTypes>} */(parser),
@@ -57,7 +58,7 @@ export default class ParentChildTransformer extends Transformer {
                         continue
                     }
                 }
-                const transformed = this.doTransform(current)
+                const transformed = this.transform(current, visited)
                 if (current !== transformed) {
                     children[i] = children[i].withActualParser(transformed, this.traverse, this.opaque)
                     changed = true
@@ -65,13 +66,13 @@ export default class ParentChildTransformer extends Transformer {
             }
         } else {
             children = children.map(child => {
-                const transformed = this.doTransform(child)
+                const transformed = this.transform(child, visited)
                 changed ||= child !== transformed
                 return transformed
             })
         }
         if (changed) {
-            return this.doTransform(parser.wrap(...children))
+            return /** @type {T} */(this.transform(parser.wrap(...children), visited))
         }
         return parser
     }

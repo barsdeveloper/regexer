@@ -53,8 +53,8 @@ export default class Parser {
     }
 
     /**
-     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
-     * @param {(new (...args: any) => Parser<any>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @param {ConstructorType<Parser<any>>[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {ConstructorType<Parser<any>>[]} opaque List of types to consider actual parser even though they have isActualParser = false
      * @returns {Parser<any>}
      */
     actualParser(traverse = [], opaque = []) {
@@ -68,8 +68,8 @@ export default class Parser {
 
     /**
      * @param {Parser<any>} other
-     * @param {(new (...args: any) => Parser<any>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
-     * @param {(new (...args: any) => Parser<any>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @param {ConstructorType<Parser<any>>[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {ConstructorType<Parser<any>>[]} opaque List of types to consider actual parser even though they have isActualParser = false
      * @returns {Parser<any>}
      */
     withActualParser(other, traverse = [], opaque = []) {

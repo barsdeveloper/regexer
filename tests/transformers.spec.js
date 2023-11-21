@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test"
 import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
 import LookaroundParser from "../src/parser/LookaroundParser.js"
+import MergeStringsTransformer from "../src/transformers/MergeStringsTransformer.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
 import RemoveLazyTransformer from "../src/transformers/RemoveLazyTransformer.js"
@@ -439,6 +440,41 @@ test("Remove trivial parsers 5", ({ page }) => {
                 R.seq(R.number, R.grp(R.nonGrp(R.success()).map(f1).atLeast(20)).map(f3), R.str("a"))
             ),
             R.seq(R.number, R.str("a"))
+        )
+    ).toBeTruthy()
+})
+
+test("Merge strings", ({ page }) => {
+    const mergeStrings = new MergeStringsTransformer()
+    expect(
+        R.equals(
+            mergeStrings.run(
+                R.seq(
+                    R.str("a"),
+                    R.str("b"),
+                    R.str("c"),
+                    R.str("d"),
+                    R.grp(
+                        R.alt(
+                            R.lazy(() => R.seq(R.regexp(/#/), R.str("0"), R.str("1"), R.str("2"), R.str("3"))),
+                            R.nonGrp(R.seq(R.str("A"), R.str("B"), R.failure()))
+                        )
+                    ),
+                    R.str("e"),
+                    R.str("f"),
+                    R.str("g"),
+                )
+            ),
+            R.seq(
+                R.str("abcd"),
+                R.grp(
+                    R.alt(
+                        R.lazy(() => R.seq(R.regexp(/#/), R.str("0123"))),
+                        R.nonGrp(R.seq(R.str("AB"), R.failure())),
+                    )
+                ),
+                R.str("efg"),
+            )
         )
     ).toBeTruthy()
 })

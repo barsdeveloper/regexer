@@ -11,17 +11,35 @@ import TimesParser from "../parser/TimesParser.js"
 export default class RemoveTrivialParsersTransformer extends ParentChildTransformer {
 
     constructor() {
-        super([AlternativeParser, SequenceParser, TimesParser, CapturingGroupParser, NonCapturingGroupParser], [SuccessParser, FailureParser])
+        super(
+            [
+                AlternativeParser,
+                SequenceParser,
+                TimesParser,
+                CapturingGroupParser,
+                NonCapturingGroupParser
+            ],
+            [
+                SuccessParser,
+                FailureParser
+            ]
+        )
     }
 
     /**
      * @protected
-     * @param {AlternativeParser<Parser<any>[]> | SequenceParser<Parser<any>[]> | TimesParser<Parser<any>> | CapturingGroupParser | NonCapturingGroupParser} parent
+     * @param {AlternativeParser<Parser<any>[]>
+     *     | SequenceParser<Parser<any>[]>
+     *     | TimesParser<Parser<any>>
+     *     | CapturingGroupParser
+     *     | NonCapturingGroupParser
+     * } parent
      * @param {SuccessParser | FailureParser} child
      * @param {Number} index
+     * @param {Parser<any>} previousChild
      * @returns {Parser<any>?}
      */
-    doTransformParent(parent, child, index) {
+    doTransformParent(parent, child, index, previousChild) {
         if (parent instanceof AlternativeParser && child instanceof SuccessParser) {
             return parent.wrap(...parent.parsers.slice(0, index))
         }
@@ -31,17 +49,22 @@ export default class RemoveTrivialParsersTransformer extends ParentChildTransfor
         if (parent instanceof TimesParser || parent instanceof CapturingGroupParser || parent instanceof NonCapturingGroupParser) {
             return child
         }
-        return parent
     }
 
     /**
      * @protected
-     * @param {AlternativeParser<Parser<any>[]> | SequenceParser<Parser<any>[]> | TimesParser<Parser<any>> | CapturingGroupParser | NonCapturingGroupParser} parent
+     * @param {AlternativeParser<Parser<any>[]>
+     *     | SequenceParser<Parser<any>[]>
+     *     | TimesParser<Parser<any>>
+     *     | CapturingGroupParser
+     *     | NonCapturingGroupParser
+     * } parent
      * @param {SuccessParser | FailureParser} child
      * @param {Number} index
+     * @param {Parser<any>} previousChild
      * @returns {Parser<any>[]}
      */
-    doTransformChild(parent, child, index) {
+    doTransformChild(parent, child, index, previousChild) {
         if (
             parent instanceof AlternativeParser && child instanceof FailureParser
             || parent instanceof SequenceParser && child instanceof SuccessParser

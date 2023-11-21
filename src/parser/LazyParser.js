@@ -34,7 +34,7 @@ export default class LazyParser extends Parser {
      * @param {P} parsers
      */
     wrap(...parsers) {
-        const regexerConstructor = /** @type {new (...args: any) => Regexer<typeof parsers[0]>} */(
+        const regexerConstructor = /** @type {ConstructorType<Regexer<typeof parsers[0]>>} */(
             this.#parser().constructor
         )
         return new LazyParser(() => new regexerConstructor(parsers[0]))

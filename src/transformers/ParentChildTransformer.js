@@ -8,6 +8,7 @@ export default class ParentChildTransformer extends Transformer {
 
     #parentTypes
     #childTypes
+    static replaceBothChildren = false
 
     /**
      * @param {ConstructorsFromArrayTypes<ParentTypes>} parentTypes
@@ -28,33 +29,30 @@ export default class ParentChildTransformer extends Transformer {
      * @return {T}
      */
     doTransform(parser, visited) {
+        const Self = /** @type {typeof ParentChildTransformer} */(this.constructor)
         let changed = false
         let children = parser.unwrap()
         if (this.#parentTypes.find(t => parser instanceof t)) {
-            for (let i = 0; i < children.length; ++i) {
-                const current = children[i].actualParser(this.traverse, this.opaque)
+            let previous = null
+            let current = previous
+            for (let i = 0; i < children.length; previous = current, ++i) {
+                current = children[i].actualParser(this.traverse, this.opaque)
                 if (this.#childTypes.find(t => current instanceof t)) {
-                    const newParent = this.doTransformParent(
-                        /** @type {UnionFromArray<ParentTypes>} */(parser),
-                        /** @type {UnionFromArray<ChildTypes>} */(current),
-                        i
-                    )
-                    if (newParent != parser) {
+                    const newParent = this.doTransformParent(parser, current, i, previous)
+                    if (newParent && newParent != parser) {
                         return /** @type {T} */(this.transform(newParent, visited))
                     }
-                    const newChildren = this.doTransformChild(
-                        /** @type {UnionFromArray<ParentTypes>} */(parser),
-                        /** @type {UnionFromArray<ChildTypes>} */(current),
-                        i
-                    )
-                    if (newChildren.length !== 1 || newChildren[0] !== current) {
+                    const newChildren = this.doTransformChild(parser, current, i, previous)
+                    if (newChildren && (newChildren.length !== 1 || newChildren[0] !== current)) {
+                        const offset = Self.replaceBothChildren ? 1 : 0
+                        current = newChildren[0]
                         children.splice(
-                            i,
-                            1,
+                            i - offset,
+                            offset + 1,
                             ...newChildren.map(c => children[i].withActualParser(c, this.traverse, this.opaque))
                         )
                         changed = true
-                        --i
+                        i -= 1
                         continue
                     }
                 }
@@ -80,24 +78,26 @@ export default class ParentChildTransformer extends Transformer {
     /**
      * Replace the parent parser with another parser
      * @protected
-     * @param {UnionFromArray<ParentTypes>} parent
-     * @param {UnionFromArray<ChildTypes>} child
+     * @param {Parser<any>} parent
+     * @param {Parser<any>} child
      * @param {Number} index
+     * @param {Parser<any>} previousChild
      * @returns {Parser<any>?}
      */
-    doTransformParent(parent, child, index) {
-        return parent
+    doTransformParent(parent, child, index, previousChild) {
+        return null
     }
 
     /**
      * Replace the given child with other children
      * @protected
-     * @param {UnionFromArray<ParentTypes>} parent
-     * @param {UnionFromArray<ChildTypes>} child
+     * @param {Parser<any>} parent
+     * @param {Parser<any>} child
      * @param {Number} index
+     * @param {Parser<any>} previousChild
      * @returns {Parser<any>[]?}
      */
-    doTransformChild(parent, child, index) {
-        return [child]
+    doTransformChild(parent, child, index, previousChild) {
+        return null
     }
 }

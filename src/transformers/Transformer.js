@@ -5,10 +5,10 @@ export default class Transformer {
 
     #next = null
 
-    /** @type {(new (...args: any) => Parser<any>)[]} */
+    /** @type {ConstructorType<Parser<any>>[]} */
     traverse = [CapturingGroupParser]
 
-    /** @type {(new (...args: any) => Parser<any>)[]} */
+    /** @type {ConstructorType<Parser<any>>[]} */
     opaque = []
 
     constructor() {

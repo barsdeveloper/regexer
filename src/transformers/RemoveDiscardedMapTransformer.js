@@ -14,25 +14,25 @@ export default class RemoveDiscardedMapTransformer extends ParentChildTransforme
      * @param {LookaroundParser<Parser<any>> | MapParser<Parser<any>>} parent
      * @param {LookaroundParser<Parser<any>> | MapParser<Parser<any>>} child
      * @param {Number} index
+     * @param {Parser<any>} previousChild
      * @returns {Parser<any>}
      */
-    doTransformParent(parent, child, index) {
+    doTransformParent(parent, child, index, previousChild) {
         if (parent instanceof MapParser && child instanceof LookaroundParser) {
             return parent.parser.withActualParser(child, this.traverse, this.opaque)
         }
-        return parent
     }
 
     /**
      * @param {LookaroundParser<Parser<any>> | MapParser<Parser<any>>} parent
      * @param {LookaroundParser<Parser<any>> | MapParser<Parser<any>>} child
      * @param {Number} index
+     * @param {Parser<any>} previousChild
      * @returns {Parser<any>[]}
      */
-    doTransformChild(parent, child, index) {
+    doTransformChild(parent, child, index, previousChild) {
         if (parent instanceof LookaroundParser && child instanceof MapParser) {
             return [child.parser]
         }
-        return [child]
     }
 }

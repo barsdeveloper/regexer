@@ -37,6 +37,7 @@
  * @template T
  * @typedef {T extends [infer A] ? [ConstructorType<A>]
  *     : T extends [infer A, ...infer B] ? [ConstructorType<A>, ...ConstructorsFromArrayTypes<B>]
+ *     : T extends [] ? []
  *     : any
  * } ConstructorsFromArrayTypes
  **/

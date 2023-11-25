@@ -129,7 +129,7 @@ test("Inline parsers 2", ({ page }) => {
             R.grp(
                 R.seq(
                     R.str("1").map(f1),
-                    R.str("2"),
+                    R.lazy(() => R.str("2")),
                     R.success(),
                     R.grp(
                         R.alt(
@@ -174,10 +174,10 @@ test("Inline parsers 2", ({ page }) => {
                         "hotel"
                     ),
                     R.alt(
-                        R.nonGrp(R.str("london")),
-                        R.nonGrp(R.str("paris")),
-                        R.nonGrp(R.str("madrid")),
-                        R.nonGrp(R.str("milan")),
+                        R.nonGrp(R.lazy(() => R.str("london"))),
+                        R.nonGrp(R.lazy(() => R.str("paris"))),
+                        R.nonGrp(R.lazy(() => R.str("madrid"))),
+                        R.nonGrp(R.lazy(() => R.str("milan"))),
                         R.failure(),
                     )
                 ).map(f1),
@@ -444,7 +444,7 @@ test("Remove trivial parsers 5", ({ page }) => {
     ).toBeTruthy()
 })
 
-test("Merge strings", ({ page }) => {
+test("Merge strings 1", ({ page }) => {
     const mergeStrings = new MergeStringsTransformer()
     expect(
         R.equals(
@@ -475,6 +475,24 @@ test("Merge strings", ({ page }) => {
                 ),
                 R.str("efg"),
             )
+        )
+    ).toBeTruthy()
+})
+
+test("Merge strings 2", ({ page }) => {
+    const mergeStrings = new MergeStringsTransformer()
+    let a, b, c
+    expect(
+        R.equals(
+            mergeStrings.run(
+                R.seq(
+                    R.success(),
+                    R.str("a").map(v => a = `1${v}`),
+                    R.str("b").map(v => b = `2${v}`),
+                    R.str("c").map(v => c = `3${v}`),
+                )
+            ),
+            R.seq(R.success(), R.str("abc")),
         )
     ).toBeTruthy()
 })

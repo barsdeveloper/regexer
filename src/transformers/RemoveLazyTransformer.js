@@ -1,30 +1,21 @@
 import LazyParser from "../parser/LazyParser.js"
-import Transformer from "./Transformer.js"
+import ParentChildTransformer from "./ParentChildTransformer.js"
+import Parser from "../parser/Parser.js"
 
-export default class RemoveLazyTransformer extends Transformer {
+/** @extends {ParentChildTransformer<[LazyParser], [Parser]>} */
+export default class RemoveLazyTransformer extends ParentChildTransformer {
+
+    constructor() {
+        super([LazyParser])
+    }
 
     /**
      * @protected
-     * @template {Parser<any>} T
-     * @param {T} parser
-     * @param {Map<Parser<any>, Parser<any>>} visited
-     * @return {T}
+     * @param {LazyParser<any>} parent
+     * @returns {Parser<any>?}
      */
-    doTransform(parser, visited) {
-        let changed = false
-        let children = parser.unwrap()
-        if (parser instanceof LazyParser) {
-            return /** @type {T} */(this.transform(children[0], visited))
-        } else {
-            children = children.map(child => {
-                const transformed = this.transform(child, visited)
-                changed ||= child !== transformed
-                return transformed
-            })
-        }
-        if (changed) {
-            return /** @type {T} */(parser.wrap(...children))
-        }
-        return parser
+    doTransformParent(parent) {
+        let children = parent.unwrap()
+        return children[0]
     }
 }

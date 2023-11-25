@@ -142,6 +142,20 @@ test("Test 4", async ({ page }) => {
         R.lazy(() => R.regexp(/a(b)c/))
     )).toBeTruthy()
     expect(R.equals(
+        R.lazy(() => R.regexp(/a(b)c/)),
+        R.regexpGroups(/a(b)c/),
+    )).toBeTruthy()
+    expect(R.equals(
+        R.regexpGroups(/a(b)c/),
+        R.lazy(() => R.regexp(/a(b)c/)),
+        true
+    )).toBeFalsy()
+    expect(R.equals(
+        R.lazy(() => R.regexp(/a(b)c/)),
+        R.regexpGroups(/a(b)c/),
+        true
+    )).toBeFalsy()
+    expect(R.equals(
         R.lazy(() => R.regexp(/a(b)c/, 1)).map(f2),
         R.lazy(() => R.regexp(/a(b)c/, 1)).map(f2),
         true
@@ -375,8 +389,8 @@ test("Test 13", async ({ page }) => {
         R.seq(R.str("a"), R.str("a"), R.seq(R.str("a"), R.str("a"), R.seq(R.str("a"), R.str("a"), Grammar.a)))
     expect(R.equals(Grammar.a, other)).toBeTruthy()
     expect(R.equals(other, Grammar.a)).toBeTruthy()
-    expect(R.equals(Grammar.a, other, true)).toBeTruthy()
-    expect(R.equals(other, Grammar.a, true)).toBeTruthy()
+    expect(R.equals(Grammar.a, other)).toBeTruthy()
+    expect(R.equals(other, Grammar.a)).toBeTruthy()
 })
 
 test("Test 14", async ({ page }) => {
@@ -391,8 +405,8 @@ test("Test 14", async ({ page }) => {
     const other = R.seq(R.alt(R.regexp(/a/).map(f3), Grammar.b, R.seq(Grammar.c, R.str("d"))), R.str("d"))
     expect(R.equals(Grammar.root, other)).toBeTruthy()
     expect(R.equals(other, Grammar.root)).toBeTruthy()
-    expect(R.equals(Grammar.root, other, true)).toBeTruthy()
-    expect(R.equals(other, Grammar.root, true)).toBeTruthy()
+    expect(R.equals(Grammar.root, other)).toBeTruthy()
+    expect(R.equals(other, Grammar.root)).toBeTruthy()
 })
 
 test("Test 15", async ({ page }) => {
@@ -427,8 +441,8 @@ test("Test 17", async ({ page }) => {
     }
     expect(R.equals(Grammar.a, Grammar.b)).toBeTruthy()
     expect(R.equals(Grammar.b, Grammar.a)).toBeTruthy()
-    expect(R.equals(Grammar.a, Grammar.b, true)).toBeTruthy()
-    expect(R.equals(Grammar.b, Grammar.a, true)).toBeTruthy()
+    expect(R.equals(Grammar.a, Grammar.b)).toBeTruthy()
+    expect(R.equals(Grammar.b, Grammar.a)).toBeTruthy()
 })
 
 test("Test 18", async ({ page }) => {

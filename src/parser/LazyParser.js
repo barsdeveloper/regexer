@@ -60,6 +60,8 @@ export default class LazyParser extends Parser {
                 return true
             }
             other = other.resolve()
+        } else if (strict) {
+            return false
         }
         this.resolve()
         return this.#resolvedPraser.equals(context, other, strict)

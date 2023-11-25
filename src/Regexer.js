@@ -21,18 +21,17 @@ export default class Regexer {
     /** @type {(new (parser: Parser<any>) => Regexer<typeof parser>) & typeof Regexer} */
     Self
 
-    static #numberTransformer = v => Number(v)
+    static #numberMapper = v => Number(v)
     /** @param {[any, ...any]|RegExpExecArray} param0 */
     static #firstElementGetter = ([v, _]) => v
     /** @param {[any, any, ...any]|RegExpExecArray} param0 */
     static #secondElementGetter = ([_, v]) => v
     static #arrayFlatter = ([first, rest]) => [first, ...rest]
-    static #joiner =
-        /** @param {any} v */
-        v =>
-            v instanceof Array
-                ? v.join("")
-                : v
+    /** @param {any} v */
+    static #joiner = v =>
+        v instanceof Array
+            ? v.join("")
+            : v
     static #createEscapeable = character => String.raw`[^${character}\\]*(?:\\.[^${character}\\]*)*`
     static #numberRegex = /[-\+]?(?:\d*\.)?\d+/
 
@@ -40,19 +39,19 @@ export default class Regexer {
 
     /** Parser accepting any valid decimal, possibly signed number */
     static number = this.regexp(new RegExp(this.#numberRegex.source + String.raw`(?!\.)`))
-        .map(this.#numberTransformer)
+        .map(this.#numberMapper)
 
     /** Parser accepting any digits only number */
-    static numberNatural = this.regexp(/\d+/).map(this.#numberTransformer)
+    static numberNatural = this.regexp(/\d+/).map(this.#numberMapper)
 
     /** Parser accepting any valid decimal, possibly signed, possibly in the exponential form number */
     static numberExponential = this.regexp(new RegExp(
         this.#numberRegex.source + String.raw`(?:[eE][\+\-]?\d+)?(?!\.)`)
-    ).map(this.#numberTransformer)
+    ).map(this.#numberMapper)
 
     /** Parser accepting any valid decimal number between 0 and 1 */
     static numberUnit = this.regexp(/\+?(?:0(?:\.\d+)?|1(?:\.0+)?)(?![\.\d])/)
-        .map(this.#numberTransformer)
+        .map(this.#numberMapper)
 
     /** Parser accepting whitespace */
     static whitespace = this.regexp(/\s+/)

@@ -13,7 +13,7 @@ export default class MergeStringsTransformer extends ParentChildTransformer {
 
     /**
      * @protected
-     * @param {Parser<any>} parent
+     * @param {SequenceParser<Parser<any>[]>} parent
      * @param {Parser<any>} child
      * @param {Number} index
      * @param {Parser<any>} previousChild
@@ -21,7 +21,11 @@ export default class MergeStringsTransformer extends ParentChildTransformer {
      */
     doTransformChild(parent, child, index, previousChild) {
         if (previousChild instanceof StringParser && child instanceof StringParser) {
-            return [new StringParser(previousChild.value + child.value)]
+            const result = [new StringParser(previousChild.value + child.value)]
+            if (previousChild != parent.parsers[index - 1]) {
+
+            }
+            return result
         }
     }
 }

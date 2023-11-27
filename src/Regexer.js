@@ -269,7 +269,7 @@ export default class Regexer {
      */
     assert(fn) {
         return this.chain((v, input, position) => fn(v, input, position)
-            ? this.Self.success(v)
+            ? this.Self.success().map(() => v)
             : this.Self.failure()
         )
     }

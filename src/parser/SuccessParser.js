@@ -5,7 +5,6 @@ import StringParser from "./StringParser.js"
 /** @extends StringParser<""> */
 export default class SuccessParser extends StringParser {
 
-    static isTerminal = true
     static instance = new SuccessParser()
 
     constructor() {

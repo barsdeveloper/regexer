@@ -223,27 +223,27 @@ test("Test 9", async ({ page }) => {
     const lhs = R.seq(
         R.grp(R.class(
             R.escapedChar("\b"),
-            R.negClass(R.range(R.str("a"), R.escapedChar("\0")))
+            R.range(R.str("a"), R.escapedChar("\0"))
         )),
         R.nonGrp(R.escapedChar("\x48", EscapedCharParser.Type.HEX)),
     )
     const rhs = R.seq(
         R.grp(R.alt(
             R.str("\b"),
-            R.negClass(R.range(R.str("a"), R.str("\0")))
+            R.range(R.str("a"), R.str("\0"))
         )),
         R.str("\x48"),
     )
     const rhs2 = R.seq(
-        R.grp(R.alt(
+        R.grp(R.negClass(
             R.str("\b"),
             R.range(R.str("a"), R.str("\0"))
         )),
         R.str("\x48"),
     )
     expect(R.equals(lhs, rhs)).toBeTruthy()
-    expect(R.equals(lhs, rhs2)).toBeFalsy()
     expect(R.equals(rhs, lhs)).toBeTruthy()
+    expect(R.equals(lhs, rhs2)).toBeFalsy()
     expect(R.equals(rhs2, lhs)).toBeFalsy()
     expect(R.equals(lhs, rhs, true)).toBeFalsy()
     expect(R.equals(rhs, lhs, true)).toBeFalsy()
@@ -436,8 +436,8 @@ test("Test 16", async ({ page }) => {
 test("Test 17", async ({ page }) => {
     class Grammar {
         /** @type {Regexer<Parser<any>>} */
-        static a = R.seq(R.str("a"), R.lazy(() => this.a))
-        static b = R.seq(R.str("a"), R.seq(R.str("a"), R.seq(R.str("a"), R.lazy(() => this.b))))
+        static a = R.seq(R.str("a"), R.lazy(() => this.a), R.success())
+        static b = R.seq(R.str("a"), R.seq(R.str("a"), R.seq(R.str("a"), R.lazy(() => this.b), R.str("")), R.success()), R.success())
     }
     expect(R.equals(Grammar.a, Grammar.b)).toBeTruthy()
     expect(R.equals(Grammar.b, Grammar.a)).toBeTruthy()

@@ -41,7 +41,8 @@ export default class Reply {
         return /** @type {Context} */({
             regexer: regexer,
             input: input,
-            visited: new PairMap()
+            equals: new PairMap(),
+            visited: new Set(),
         })
     }
 }

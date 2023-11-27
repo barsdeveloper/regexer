@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test"
 import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
 import LookaroundParser from "../src/parser/LookaroundParser.js"
 import MergeStringsTransformer from "../src/transformers/MergeStringsTransformer.js"
+import RecursiveSequenceTransformer from "../src/transformers/RecursiveSequenceTransformer.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
 import RemoveLazyTransformer from "../src/transformers/RemoveLazyTransformer.js"
@@ -493,6 +494,19 @@ test("Merge strings 2", ({ page }) => {
                 )
             ),
             R.seq(R.success(), R.str("abc")),
+        )
+    ).toBeTruthy()
+})
+
+test("Recursive sequence", ({ page }) => {
+    const recursiveSequence = new RecursiveSequenceTransformer()
+    /** @type {Regexer<any>} */
+    const p = R.seq(R.str("a"), R.str("b"), R.lazy(() => p.opt()))
+    expect(
+        R.equals(
+            recursiveSequence.run(p),
+            R.seq(R.str("a"), R.str("b")).atLeast(1),
+            true
         )
     ).toBeTruthy()
 })

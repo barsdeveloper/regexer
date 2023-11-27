@@ -1,10 +1,19 @@
+import Reply from "../Reply.js"
+
 /** @template T */
 export default class Parser {
 
+    static isTerminal = false
     static indentation = "    "
 
+    /** @type {Boolean?} */
+    #matchesEmptyFlag
+
+    /** @type {Parser<any>[]} */
+    #starterList
+
     /** Calling parse() can make it change the overall parsing outcome */
-    static isActualParser = true
+    isActualParser = true
 
     /**
      * @param {Result<any>} a
@@ -19,6 +28,56 @@ export default class Parser {
             position: a.position,
             value: a.value,
         })
+    }
+
+    matchesEmpty() {
+        if (this.#matchesEmptyFlag === undefined) {
+            return this.#matchesEmptyFlag = this.doMatchesEmpty()
+        }
+        return this.#matchesEmptyFlag
+    }
+
+    /**
+     * @protected
+     * @returns {Boolean}
+     */
+    doMatchesEmpty() {
+        const children = this.unwrap()
+        if (children.length === 1) {
+            return children[0].doMatchesEmpty()
+        }
+        return false
+    }
+
+    /**
+     * List of starting terminal parsers
+     * @param {Parser<any>[]} additional Additional non terminal parsers that will be considered part of the starter list when encounter even though non terminals
+     */
+    starterList(context = Reply.makeContext(null, ""), additional = []) {
+        if (!this.#starterList && !context.visited.has(this)) {
+            context.visited.add(this)
+            this.#starterList = this.doStarterList(context, additional)
+            if (additional.length) {
+                this.#starterList = this.#starterList
+                    .filter(v => !/** @type {typeof Parser} */(v.constructor).isTerminal && additional.includes(v))
+            }
+        }
+        let result = this.#starterList
+        if (!/** @type {typeof Parser} */(this.constructor).isTerminal && additional.includes(this)) {
+            result = [this, ...result]
+        }
+        return result
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        let unwrapped = this.unwrap()
+        return unwrapped?.length === 1
+            ? unwrapped[0].starterList(context, additional)
+            : []
     }
 
     /**
@@ -58,8 +117,7 @@ export default class Parser {
      * @returns {Parser<any>}
      */
     actualParser(traverse = [], opaque = []) {
-        const self = /** @type {typeof Parser<any>} */(this.constructor)
-        let isTraversable = (!self.isActualParser || traverse.find(type => this instanceof type))
+        let isTraversable = (!this.isActualParser || traverse.find(type => this instanceof type))
             && !opaque.find(type => this instanceof type)
         let unwrapped = isTraversable ? this.unwrap() : undefined
         isTraversable &&= unwrapped?.length === 1
@@ -73,8 +131,7 @@ export default class Parser {
      * @returns {Parser<any>}
      */
     withActualParser(other, traverse = [], opaque = []) {
-        const self = /** @type {typeof Parser<any>} */(this.constructor)
-        let isTraversable = (!self.isActualParser || traverse.some(type => this instanceof type))
+        let isTraversable = (!this.isActualParser || traverse.some(type => this instanceof type))
             && !opaque.some(type => this instanceof type)
         let unwrapped = isTraversable ? this.unwrap() : undefined
         isTraversable &&= unwrapped?.length === 1
@@ -107,18 +164,19 @@ export default class Parser {
             lhs = rhs
             rhs = temp
         }
-        let memoized = context.visited.get(lhs, rhs)
+        let memoized = context.equals.get(lhs, rhs)
         if (memoized !== undefined) {
             return memoized
         } else if (memoized === undefined) {
-            context.visited.set(lhs, rhs, true)
+            context.equals.set(lhs, rhs, true)
             memoized = lhs.doEquals(context, rhs, strict)
-            context.visited.set(lhs, rhs, memoized)
+            context.equals.set(lhs, rhs, memoized)
         }
         return memoized
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -127,7 +185,20 @@ export default class Parser {
         return false
     }
 
-    toString(indent = 0) {
+    /** @param {Context} context */
+    toString(context, indent = 0) {
+        if (context.visited.has(this)) {
+            return "<...>" // Recursive parser
+        }
+        context.visited.add(this)
+        return this.doToString(context, indent)
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return `${this.constructor.name} does not implement toString()`
     }
 }

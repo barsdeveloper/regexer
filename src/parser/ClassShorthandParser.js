@@ -32,6 +32,7 @@ export default class ClassShorthandParser extends RegExpParser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -40,7 +41,11 @@ export default class ClassShorthandParser extends RegExpParser {
         return other instanceof ClassShorthandParser && this.#char == other.#char
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return "\\" + this.#char
     }
 }

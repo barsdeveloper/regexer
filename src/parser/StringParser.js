@@ -7,6 +7,8 @@ import Reply from "../Reply.js"
  */
 export default class StringParser extends Parser {
 
+    static isTerminal = true
+
     #value
     get value() {
         return this.#value
@@ -16,6 +18,19 @@ export default class StringParser extends Parser {
     constructor(value) {
         super()
         this.#value = value
+    }
+
+    /** @protected */
+    doMatchesEmpty() {
+        return this.#value === ""
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        return [this]
     }
 
     /**
@@ -43,6 +58,7 @@ export default class StringParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -51,7 +67,11 @@ export default class StringParser extends Parser {
         return other instanceof StringParser && this.#value === other.#value
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         const inlined = this.value.replaceAll("\n", "\\n")
         return this.value.length > 1 || this.value[0] === " "
             ? `"${inlined.replaceAll('"', '\\"')}"`

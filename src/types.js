@@ -50,7 +50,8 @@
  * @typedef {{
  *     regexer: Regexer,
  *     input: String,
- *     visited: PairMap<Boolean>,
+ *     equals: PairMap<Boolean>,
+ *     visited: Set<Parser<any>>,
  * }} Context
  */
 

@@ -16,9 +16,9 @@ export const GroupType = {
  */
 export default class NonCapturingGroupParser extends Parser {
 
-    static isActualParser = false
-
     #parser
+
+    isActualParser = false
 
     /** @param {T} parser */
     constructor(parser) {
@@ -47,6 +47,7 @@ export default class NonCapturingGroupParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -55,8 +56,12 @@ export default class NonCapturingGroupParser extends Parser {
         return other instanceof NonCapturingGroupParser && this.#parser.equals(context, other.#parser, strict)
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         let group = ""
-        return "(?:" + this.#parser.toString(indent) + ")"
+        return "(?:" + this.#parser.toString(context, indent) + ")"
     }
 }

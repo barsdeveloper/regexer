@@ -44,6 +44,7 @@ export default class CapturingGroupParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -54,7 +55,11 @@ export default class CapturingGroupParser extends Parser {
             && this.#parser.equals(context, other.#parser, strict)
     }
 
-    toString(indent = 0) {
-        return "(" + (this.#id !== "" ? `?<${this.#id}>` : "") + this.#parser.toString(indent) + ")"
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return "(" + (this.#id !== "" ? `?<${this.#id}>` : "") + this.#parser.toString(context, indent) + ")"
     }
 }

@@ -43,10 +43,12 @@ export default class RemoveTrivialParsersTransformer extends ParentChildTransfor
         if (parent instanceof AlternativeParser && child instanceof SuccessParser) {
             return parent.wrap(...parent.parsers.slice(0, index))
         }
-        if (parent instanceof SequenceParser && child instanceof FailureParser) {
-            return child
-        }
-        if (parent instanceof TimesParser || parent instanceof CapturingGroupParser || parent instanceof NonCapturingGroupParser) {
+        if (
+            parent instanceof SequenceParser && child instanceof FailureParser
+            || parent instanceof TimesParser
+            || parent instanceof CapturingGroupParser
+            || parent instanceof NonCapturingGroupParser
+        ) {
             return child
         }
     }

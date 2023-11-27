@@ -7,6 +7,8 @@ import Reply from "../Reply.js"
  */
 export default class RegExpParser extends Parser {
 
+    static isTerminal = true
+
     /** @type {RegExp} */
     #regexp
     get regexp() {
@@ -40,6 +42,14 @@ export default class RegExpParser extends Parser {
         this.#group = group
     }
 
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        return [this]
+    }
+
     isFullyGenerated() {
         return this.regexpFullyGenerated
     }
@@ -56,6 +66,7 @@ export default class RegExpParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -66,7 +77,11 @@ export default class RegExpParser extends Parser {
             && this.#regexp.source === other.#regexp.source
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return "/" + this.#regexp.source + "/"
     }
 }

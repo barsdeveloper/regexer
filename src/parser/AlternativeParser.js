@@ -1,5 +1,7 @@
 import Parser from "./Parser.js"
 import Reply from "../Reply.js"
+import StringParser from "./StringParser.js"
+import SuccessParser from "./SuccessParser.js"
 
 /**
  * @template {Parser<any>[]} T
@@ -21,6 +23,27 @@ export default class AlternativeParser extends Parser {
     constructor(...parsers) {
         super()
         this.#parsers = parsers
+        if (this.#parsers.length === 1) {
+            this.isActualParser = false
+        }
+    }
+
+    /** @protected */
+    doMatchesEmpty() {
+        return this.#parsers.some(p => p.matchesEmpty())
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        return this.#parsers
+            .flatMap(p => p.starterList(context))
+            .reduce(
+                (acc, cur) => acc.some(p => p.equals(context, cur, true)) ? acc : (acc.push(cur), acc),
+                /** @type {Parser<any>[]} */([])
+            )
     }
 
     unwrap() {
@@ -61,6 +84,7 @@ export default class AlternativeParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -81,13 +105,25 @@ export default class AlternativeParser extends Parser {
         return true
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         const indentation = Parser.indentation.repeat(indent)
         const deeperIndentation = Parser.indentation.repeat(indent + 1)
+        if (this.#parsers.length === 2 && this.#parsers[1] instanceof SuccessParser) {
+            let result = this.#parsers[0].toString(context, indent)
+            if (!(this.#parsers[0] instanceof StringParser) && !context.visited.has(this.#parsers[0])) {
+                result = "<" + result + ">"
+            }
+            result += "?"
+            return result
+        }
         return "ALT<\n"
-            + this.#parsers
-                .map(p => deeperIndentation + p.toString(indent + 1))
-                .join("\n" + deeperIndentation + "|\n")
+            + deeperIndentation + this.#parsers
+                .map(p => p.toString(context, indent + 1))
+                .join("\n" + deeperIndentation + "| ")
             + "\n" + indentation + ">"
     }
 }

@@ -35,22 +35,11 @@ test("Test 6", async ({ page }) => {
     )
 })
 
-// test("Test 7", async ({ page }) => {
-//     expect(R.seq(R.str("a"), R.neg(R.str("b")), R.str("c")).toString(2, true)).toEqual(`
-//         SEQ<
-//             a
-//             NOT<b>
-//             c
-//         >`
-//     )
-// })
-
-test("Test 8", async ({ page }) => {
+test("Test 7", async ({ page }) => {
     expect(R.alt(R.str("alpha"), R.seq(R.str("beta"), R.str("gamma").many()).atLeast(1)).toString(2, true)).toEqual(`
         ALT<
             "alpha"
-            |
-            SEQ<
+            | SEQ<
                 "beta"
                 "gamma"*
             >+
@@ -58,8 +47,41 @@ test("Test 8", async ({ page }) => {
     )
 })
 
-test("Test 9", async ({ page }) => {
+test("Test 8", async ({ page }) => {
     expect(RegExpGrammar.regexp.parse(/[\!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?]/.source).toString()).toEqual(
         /[\!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?]/.source
+    )
+})
+
+test("Test 9", async ({ page }) => {
+    class Grammar {
+        /** @type {Regexer<Parser<any>>} */
+        static rule = R.seq(R.str("a").opt(), R.lazy(() => Grammar.rule))
+    }
+    expect(Grammar.rule.toString(2, true)).toEqual(`
+        SEQ<
+            a?
+            <...>
+        >`
+    )
+})
+
+test("Test 10", async ({ page }) => {
+    class Grammar {
+        /** @type {Regexer<Parser<any>>} */
+        static rule = R.grp(
+            R.alt(
+                R.str("a"),
+                R.str("b"),
+                R.lazy(() => Grammar.rule).opt().map(() => 123)
+            )
+        )
+    }
+    expect(Grammar.rule.toString(2, true)).toEqual(`
+        (ALT<
+            a
+            | b
+            | <...>? -> map<() => 123>
+        >)`
     )
 })

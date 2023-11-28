@@ -7,7 +7,7 @@ import Parser from "./Parser.js"
 export default class LazyParser extends Parser {
 
     #parser
-    static isActualParser = false
+    isActualParser = false
 
     /** @type {T} */
     #resolvedPraser
@@ -50,6 +50,7 @@ export default class LazyParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -67,7 +68,11 @@ export default class LazyParser extends Parser {
         return this.#resolvedPraser.equals(context, other, strict)
     }
 
-    toString(indent = 0) {
-        return this.resolve().toString(indent)
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return this.resolve().toString(context, indent)
     }
 }

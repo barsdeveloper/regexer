@@ -16,6 +16,29 @@ export default class SequenceParser extends Parser {
     constructor(...parsers) {
         super()
         this.#parsers = parsers
+        if (this.#parsers.length === 1) {
+            this.isActualParser = false
+        }
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        const result = this.#parsers[0].starterList(context)
+        for (let i = 1; i < this.#parsers.length && this.#parsers[i - 1].matchesEmpty(); ++i) {
+            this.#parsers[i].starterList(context).reduce(
+                (acc, cur) => acc.some(p => p.equals(context, cur, false)) ? acc : (acc.push(cur), acc),
+                result
+            )
+        }
+        return result
+    }
+
+    /** @protected */
+    doMatchesEmpty() {
+        return this.#parsers.every(p => p.matchesEmpty())
     }
 
     unwrap() {
@@ -49,6 +72,7 @@ export default class SequenceParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -65,12 +89,16 @@ export default class SequenceParser extends Parser {
         return true
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         const indentation = Parser.indentation.repeat(indent)
         const deeperIndentation = Parser.indentation.repeat(indent + 1)
         return "SEQ<\n"
             + this.#parsers
-                .map(p => deeperIndentation + p.toString(indent + 1))
+                .map(p => deeperIndentation + p.toString(context, indent + 1))
                 .join("\n")
             + "\n" + indentation + ">"
     }

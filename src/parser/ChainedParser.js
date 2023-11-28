@@ -25,6 +25,11 @@ export default class ChainedParser extends Parser {
         this.#fn = chained
     }
 
+    /** @protected */
+    doMatchesEmpty() {
+        return false
+    }
+
     unwrap() {
         return [this.#parser]
     }
@@ -52,6 +57,7 @@ export default class ChainedParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -62,7 +68,11 @@ export default class ChainedParser extends Parser {
             && this.#parser.equals(context, other.parser, strict)
     }
 
-    toString(indent = 0) {
-        return this.#parser.toString(indent) + " => chained<f()>"
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return this.#parser.toString(context, indent) + " => chained<f()>"
     }
 }

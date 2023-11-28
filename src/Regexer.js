@@ -94,13 +94,17 @@ export default class Regexer {
     }
 
     /**
-     * @param {Regexer<Parser<any>>} lhs
-     * @param {Regexer<Parser<any>>} rhs
+     * @param {Regexer<Parser<any>> | Parser<any>} lhs
+     * @param {Regexer<Parser<any>> | Parser<any>} rhs
      */
     static equals(lhs, rhs, strict = false) {
-        const a = lhs.getParser()
-        const b = rhs.getParser()
-        return a.equals(Reply.makeContext(lhs), b, strict)
+        const a = lhs instanceof Regexer ? lhs.getParser() : lhs
+        const b = rhs instanceof Regexer ? rhs.getParser() : rhs
+        return a.equals(
+            Reply.makeContext(lhs instanceof Regexer ? lhs : rhs instanceof Regexer ? rhs : null),
+            b,
+            strict
+        )
     }
 
     getParser() {
@@ -146,11 +150,11 @@ export default class Regexer {
     }
 
     static success(value = undefined) {
-        return new this(new SuccessParser(value))
+        return new this(value === undefined ? SuccessParser.instance : new SuccessParser())
     }
 
     static failure() {
-        return new this(new FailureParser())
+        return new this(FailureParser.instance)
     }
 
     // Combinators
@@ -265,7 +269,7 @@ export default class Regexer {
      */
     assert(fn) {
         return this.chain((v, input, position) => fn(v, input, position)
-            ? this.Self.success(v)
+            ? this.Self.success().map(() => v)
             : this.Self.failure()
         )
     }
@@ -275,6 +279,7 @@ export default class Regexer {
     }
 
     toString(indent = 0, newline = false) {
-        return (newline ? "\n" + Parser.indentation.repeat(indent) : "") + this.#parser.toString(indent)
+        return (newline ? "\n" + Parser.indentation.repeat(indent) : "")
+            + this.#parser.toString(Reply.makeContext(this, ""), indent)
     }
 }

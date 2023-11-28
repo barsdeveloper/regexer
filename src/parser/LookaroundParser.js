@@ -66,6 +66,7 @@ export default class LookaroundParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -77,7 +78,11 @@ export default class LookaroundParser extends Parser {
             && this.#parser.equals(context, other.#parser, strict)
     }
 
-    toString(indent = 0) {
-        return "(" + this.#type + this.#parser.toString(indent) + ")"
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return "(" + this.#type + this.#parser.toString(context, indent) + ")"
     }
 }

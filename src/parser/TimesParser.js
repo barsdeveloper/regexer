@@ -1,5 +1,6 @@
 import Parser from "./Parser.js"
 import Reply from "../Reply.js"
+import SuccessParser from "./SuccessParser.js"
 
 /**
  * @template {Parser<any>} T
@@ -36,6 +37,23 @@ export default class TimesParser extends Parser {
         this.#parser = parser
         this.#min = min
         this.#max = max
+    }
+
+    /** @protected */
+    doMatchesEmpty() {
+        return this.#min === 0
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        const result = this.#parser.starterList(context)
+        if (this.matchesEmpty() && !result.some(p => SuccessParser.instance.equals(context, p, false))) {
+            result.push(SuccessParser.instance)
+        }
+        return result
     }
 
     unwrap() {
@@ -81,6 +99,7 @@ export default class TimesParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -93,8 +112,12 @@ export default class TimesParser extends Parser {
             && this.#parser.equals(context, other.#parser, strict)
     }
 
-    toString(indent = 0) {
-        return this.parser.toString(indent)
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return this.parser.toString(context, indent)
             + (
                 this.#min === 0 && this.#max === 1 ? "?"
                     : this.#min === 0 && this.#max === Number.POSITIVE_INFINITY ? "*"

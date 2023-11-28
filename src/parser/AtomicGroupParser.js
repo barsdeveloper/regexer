@@ -40,6 +40,7 @@ export default class AtomicGroupParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -48,7 +49,11 @@ export default class AtomicGroupParser extends Parser {
         return other instanceof AtomicGroupParser && this.#parser.equals(context, other.#parser, strict)
     }
 
-    toString(indent = 0) {
-        return "(?>" + this.#parser.toString(indent) + ")"
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return "(?>" + this.#parser.toString(context, indent) + ")"
     }
 }

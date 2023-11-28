@@ -1,8 +1,9 @@
-import Reply from "../Reply.js"
 import RegExpParser from "./RegExpParser.js"
 
 /** @extends RegExpParser<0> */
 export default class AnyCharParser extends RegExpParser {
+
+    static isTerminal = true
 
     #dotAll
 
@@ -13,14 +14,18 @@ export default class AnyCharParser extends RegExpParser {
     }
 
     /**
-     * In an alternative, this would always match parser could might
-     * @param {Parser<any>} parser
+     * @protected
+     * @param {Context} context
      */
-    dominates(parser) {
-        return this.#dotAll || !parser.actualParser().parse(Reply.makeContext("\n"), 0).status
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        return [this]
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return "."
     }
 }

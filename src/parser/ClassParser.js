@@ -1,6 +1,6 @@
-import Reply from "../Reply.js"
 import AlternativeParser from "./AlternativeParser.js"
 import Parser from "./Parser.js"
+import Reply from "../Reply.js"
 
 /**
  * @template {Parser<any>[]} T
@@ -45,6 +45,7 @@ export default class ClassParser extends AlternativeParser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -57,9 +58,13 @@ export default class ClassParser extends AlternativeParser {
             && super.doEquals(context, other, strict)
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return "["
-            + this.parsers.map(p => p.toString(indent)).join("")
+            + this.parsers.map(p => p.toString(context, indent)).join("")
             + "]"
     }
 }

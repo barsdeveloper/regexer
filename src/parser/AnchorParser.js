@@ -17,12 +17,27 @@ export const AnchorType = {
  */
 export default class AnchorParser extends Parser {
 
+    static isTerminal = true
+
     #type
 
     /** @param {T} type */
     constructor(type) {
         super()
         this.#type = type
+    }
+
+    /** @protected */
+    doMatchesEmpty() {
+        return true
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        return [this]
     }
 
     /**
@@ -43,6 +58,7 @@ export default class AnchorParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -51,7 +67,11 @@ export default class AnchorParser extends Parser {
         return other instanceof AnchorParser && this.#type === other.#type
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return this.#type
     }
 }

@@ -7,8 +7,6 @@ import Parser from "./Parser.js"
  */
 export default class MapParser extends Parser {
 
-    static isActualParser = false
-
     #parser
     get parser() {
         return this.#parser
@@ -18,6 +16,8 @@ export default class MapParser extends Parser {
     get mapper() {
         return this.#mapper
     }
+
+    isActualParser = false
 
     /**
      * @param {P} parser
@@ -55,6 +55,7 @@ export default class MapParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -65,11 +66,15 @@ export default class MapParser extends Parser {
             && this.#parser.equals(context, other.#parser, strict)
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         let serializedMapper = this.#mapper.toString()
         if (serializedMapper.length > 80 || serializedMapper.includes("\n")) {
             serializedMapper = "( ... ) => { ... }"
         }
-        return this.#parser.toString(indent) + ` -> map<${serializedMapper}>`
+        return this.#parser.toString(context, indent) + ` -> map<${serializedMapper}>`
     }
 }

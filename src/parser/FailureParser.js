@@ -4,6 +4,17 @@ import Reply from "../Reply.js"
 /** @extends Parser<String> */
 export default class FailureParser extends Parser {
 
+    static isTerminal = true
+    static instance = new FailureParser()
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        return [this]
+    }
+
     /**
      * @param {Context} context
      * @param {Number} position
@@ -13,6 +24,7 @@ export default class FailureParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -21,7 +33,11 @@ export default class FailureParser extends Parser {
         return other instanceof FailureParser
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return "<FAILURE>"
     }
 }

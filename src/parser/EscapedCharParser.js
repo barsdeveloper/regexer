@@ -43,6 +43,7 @@ export default class EscapedCharParser extends StringParser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -52,14 +53,18 @@ export default class EscapedCharParser extends StringParser {
             && super.doEquals(context, other, strict)
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         switch (this.#type) {
             case EscapedCharParser.Type.NORMAL:
                 return "\\" + (
                     Object.entries(EscapedCharParser.specialEscapedCharacters)
                         .find(([k, v]) => this.value === v)
                     ?.[0]
-                    ?? super.toString(indent)
+                    ?? super.doToString(context, indent)
                 )
             case EscapedCharParser.Type.HEX:
                 return "\\x" + this.value.codePointAt(0).toString(16)
@@ -68,6 +73,6 @@ export default class EscapedCharParser extends StringParser {
             case EscapedCharParser.Type.UNICODE_FULL:
                 return "\\u{" + this.value.codePointAt(0).toString(16) + "}"
         }
-        return super.toString(indent)
+        return super.doToString(context, indent)
     }
 }

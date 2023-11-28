@@ -9,6 +9,8 @@ import StringParser from "./StringParser.js"
  */
 export default class RangeParser extends Parser {
 
+    static isTerminal = true
+
     #from
     get from() {
         return this.#from
@@ -30,6 +32,14 @@ export default class RangeParser extends Parser {
     }
 
     /**
+     * @protected
+     * @param {Context} context
+     */
+    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+        return [this]
+    }
+
+    /**
      * @param {Context} context
      * @param {Number} position
      */
@@ -41,6 +51,7 @@ export default class RangeParser extends Parser {
     }
 
     /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
@@ -51,7 +62,11 @@ export default class RangeParser extends Parser {
             && this.#to.equals(context, other.#to, strict)
     }
 
-    toString(indent = 0) {
-        return this.#from.toString(indent) + "-" + this.#to.toString(indent)
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return this.#from.toString(context, indent) + "-" + this.#to.toString(context, indent)
     }
 }

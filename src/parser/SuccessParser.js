@@ -1,38 +1,31 @@
 import Parser from "./Parser.js"
 import Reply from "../Reply.js"
+import StringParser from "./StringParser.js"
 
-/**
- * @template T
- * @extends Parser<T>
- */
-export default class SuccessParser extends Parser {
+/** @extends StringParser<""> */
+export default class SuccessParser extends StringParser {
 
-    #value
+    static instance = new SuccessParser()
 
-    /** @param {T} value */
-    constructor(value) {
-        super()
-        this.#value = value
+    constructor() {
+        super("")
     }
 
     /**
-     * @param {Context} context
-     * @param {Number} position
-     */
-    parse(context, position) {
-        return Reply.makeSuccess(position, this.#value)
-    }
-
-    /**
+     * @protected
      * @param {Context} context
      * @param {Parser<any>} other
      * @param {Boolean} strict
      */
     doEquals(context, other, strict) {
-        return other instanceof SuccessParser
+        return strict ? other instanceof SuccessParser : super.doEquals(context, other, false)
     }
 
-    toString(indent = 0) {
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
         return "<SUCCESS>"
     }
 }

@@ -18,7 +18,7 @@ export default class SuccessParser extends StringParser {
      * @param {Boolean} strict
      */
     doEquals(context, other, strict) {
-        return strict ? other instanceof SuccessParser : super.equals(context, other, false)
+        return strict ? other instanceof SuccessParser : super.doEquals(context, other, false)
     }
 
     /**

@@ -493,7 +493,8 @@ test("Merge strings 2", ({ page }) => {
                     R.str("c").map(v => c = `3${v}`),
                 )
             ),
-            R.seq(R.success(), R.str("abc")),
+            // @ts-expect-error
+            R.seq(R.str("abc")),
         )
     ).toBeTruthy()
 })

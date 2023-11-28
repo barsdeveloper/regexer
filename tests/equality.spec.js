@@ -112,6 +112,18 @@ test("Test 1", async ({ page }) => {
             true,
         )
     ).toBeFalsy()
+    expect(
+        R.equals(R.str(""), R.success(),)
+    ).toBeTruthy()
+    expect(
+        R.equals(R.success(), R.str(""))
+    ).toBeTruthy()
+    expect(
+        R.equals(R.str(""), R.success(), true)
+    ).toBeFalsy()
+    expect(
+        R.equals(R.success(), R.str(""), true)
+    ).toBeFalsy()
 })
 
 test("Test 2", async ({ page }) => {

@@ -29,7 +29,7 @@ export default class SequenceParser extends Parser {
         const result = this.#parsers[0].starterList(context)
         for (let i = 1; i < this.#parsers.length && this.#parsers[i - 1].matchesEmpty(); ++i) {
             this.#parsers[i].starterList(context).reduce(
-                (acc, cur) => acc.some(p => p.equals(context, cur, true)) ? acc : (acc.push(cur), acc),
+                (acc, cur) => acc.some(p => p.equals(context, cur, false)) ? acc : (acc.push(cur), acc),
                 result
             )
         }

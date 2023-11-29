@@ -185,8 +185,7 @@ export default class Parser {
         return false
     }
 
-    /** @param {Context} context */
-    toString(context, indent = 0) {
+    toString(context = Reply.makeContext(null, ""), indent = 0) {
         if (context.visited.has(this)) {
             return "<...>" // Recursive parser
         }

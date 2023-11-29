@@ -271,8 +271,7 @@ class Parser {
         return false
     }
 
-    /** @param {Context} context */
-    toString(context, indent = 0) {
+    toString(context = Reply.makeContext(null, ""), indent = 0) {
         if (context.visited.has(this)) {
             return "<...>" // Recursive parser
         }
@@ -286,63 +285,6 @@ class Parser {
      */
     doToString(context, indent = 0) {
         return `${this.constructor.name} does not implement toString()`
-    }
-}
-
-/**
- * @template T
- * @extends Parser<T>
- */
-class SuccessParser extends Parser {
-
-    static isTerminal = true
-    static instance = new SuccessParser("")
-
-    #value
-
-    /** @param {T} value */
-    constructor(value) {
-        super();
-        this.#value = value;
-    }
-
-    /** @protected */
-    doMatchesEmpty() {
-        return true
-    }
-
-    /**
-     * @protected
-     * @param {Context} context
-     */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
-        return [SuccessParser.instance]
-    }
-
-    /**
-     * @param {Context} context
-     * @param {Number} position
-     */
-    parse(context, position) {
-        return Reply.makeSuccess(position, this.#value)
-    }
-
-    /**
-     * @protected
-     * @param {Context} context
-     * @param {Parser<any>} other
-     * @param {Boolean} strict
-     */
-    doEquals(context, other, strict) {
-        return other instanceof SuccessParser
-    }
-
-    /**
-     * @protected
-     * @param {Context} context
-     */
-    doToString(context, indent = 0) {
-        return "<SUCCESS>"
     }
 }
 
@@ -375,9 +317,6 @@ class StringParser extends Parser {
      * @param {Context} context
      */
     doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
-        if (this.#value === "") {
-            return [SuccessParser.instance]
-        }
         return [this]
     }
 
@@ -413,7 +352,6 @@ class StringParser extends Parser {
      */
     doEquals(context, other, strict) {
         return other instanceof StringParser && this.#value === other.#value
-            || !strict && this.#value === "" && other instanceof SuccessParser
     }
 
     /**
@@ -425,6 +363,34 @@ class StringParser extends Parser {
         return this.value.length > 1 || this.value[0] === " "
             ? `"${inlined.replaceAll('"', '\\"')}"`
             : inlined
+    }
+}
+
+/** @extends StringParser<""> */
+class SuccessParser extends StringParser {
+
+    static instance = new SuccessParser()
+
+    constructor() {
+        super("");
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     * @param {Parser<any>} other
+     * @param {Boolean} strict
+     */
+    doEquals(context, other, strict) {
+        return strict ? other instanceof SuccessParser : super.doEquals(context, other, false)
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doToString(context, indent = 0) {
+        return "<SUCCESS>"
     }
 }
 
@@ -464,7 +430,7 @@ class AlternativeParser extends Parser {
      */
     doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
         return this.#parsers
-            .flatMap(p => p.starterList(context))
+            .flatMap(p => p.starterList(context, additional))
             .reduce(
                 (acc, cur) => acc.some(p => p.equals(context, cur, true)) ? acc : (acc.push(cur), acc),
                 /** @type {Parser<any>[]} */([])
@@ -1025,7 +991,7 @@ class SequenceParser extends Parser {
         const result = this.#parsers[0].starterList(context);
         for (let i = 1; i < this.#parsers.length && this.#parsers[i - 1].matchesEmpty(); ++i) {
             this.#parsers[i].starterList(context).reduce(
-                (acc, cur) => acc.some(p => p.equals(context, cur, true)) ? acc : (acc.push(cur), acc),
+                (acc, cur) => acc.some(p => p.equals(context, cur, false)) ? acc : (acc.push(cur), acc),
                 result
             );
         }
@@ -1366,7 +1332,7 @@ class Regexer {
     }
 
     static success(value = undefined) {
-        return new this(value === undefined ? SuccessParser.instance : new SuccessParser(value))
+        return new this(value === undefined ? SuccessParser.instance : new SuccessParser())
     }
 
     static failure() {
@@ -1485,7 +1451,7 @@ class Regexer {
      */
     assert(fn) {
         return this.chain((v, input, position) => fn(v, input, position)
-            ? this.Self.success(v)
+            ? this.Self.success().map(() => v)
             : this.Self.failure()
         )
     }

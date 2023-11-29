@@ -21,16 +21,15 @@ export default class Transformer {
 
     /**
      * @template {Parser<any>} T
-     * @param {Regexer<T>} regexer
-     * @return {Regexer<T>}
+     * @param {T} regexer
+     * @return {T}
      */
     run(regexer) {
-        const parser = regexer.getParser().actualParser(this.traverse, this.opaque)
+        const parser = regexer.actualParser(this.traverse, this.opaque)
         let transformed = this.transform(parser, new Map())
         if (parser !== transformed) {
-            transformed = regexer.getParser().withActualParser(transformed, this.traverse, this.opaque)
-            // @ts-expect-error
-            return new Regexer(transformed, true)
+            transformed = regexer.withActualParser(transformed, this.traverse, this.opaque)
+            return /** @type {T} */(transformed)
         }
         return regexer
     }

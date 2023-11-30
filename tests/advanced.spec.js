@@ -6,6 +6,21 @@ import MathGrammar from "../src/grammars/MathGrammar.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import sample1 from "./sample1.js"
 import sample2 from "./sample2.js"
+import httpServer from "http-server"
+
+let webserver
+
+test.beforeAll(async () => {
+    webserver = httpServer.createServer({
+        "root": "./tests",
+        "cors": true,
+    })
+    webserver.listen(3000)
+})
+
+test.afterAll(async () => {
+    webserver.close()
+})
 
 test("Arithmetic", async ({ page }) => {
     const expression = MathGrammar.expression
@@ -69,11 +84,12 @@ test("Json", async ({ page, browser }) => {
     })
 })
 
-test("Json remote (no internet => fails)", async ({ page, browser }) => {
+test("Json large", async ({ page, browser }) => {
     const obj = await page.evaluate(async () => {
         // The following file must be available, otherwise the test will fail
-        const response = await fetch("https://raw.githubusercontent.com/barsdeveloper/regexer/master/tests/sample3.json")
-        return await response.json()
+        const response = await fetch("http://127.0.0.1:3000/sample3.json")
+        const result = await response.json()
+        return result
     })
     expect(obj["abc"][0]["_id"]).toEqual("5573629c585502b20ad43643")
     expect(obj["abc"][obj["abc"].length - 1]["_id"]).toEqual("5573629dab3dfaad7b3e10cd")

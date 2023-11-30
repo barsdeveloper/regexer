@@ -21,9 +21,13 @@
   },
   "homepage": "https://github.com/barsdeveloper/regexer#readme",
   "devDependencies": {
-    "@playwright/test": "^1.39.0",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@types/node": "^20.8.4",
-    "rollup": "^4.1.4"
+    "@playwright/test": "^1",
+    "@rollup/plugin-terser": "^0",
+    "http-server": "^14",
+    "rollup": "^4",
+    "tree-kill": "^1.2.2"
+  },
+  "dependencies": {
+    "playwright": "^1.40.1"
   }
 }

@@ -35,7 +35,7 @@ export default class RangeParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
         return [this]
     }
 

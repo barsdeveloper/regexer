@@ -17,14 +17,6 @@ export default class AnyCharParser extends RegExpParser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
-        return [this]
-    }
-
-    /**
-     * @protected
-     * @param {Context} context
-     */
     doToString(context, indent = 0) {
         return "."
     }

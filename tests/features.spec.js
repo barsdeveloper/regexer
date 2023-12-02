@@ -2,6 +2,7 @@ import { R } from "../src/grammars/RegExpGrammar.js"
 import { test, expect } from "@playwright/test"
 import Reply from "../src/Reply.js"
 import SequenceParser from "../src/parser/SequenceParser.js"
+import Parser from "../src/parser/Parser.js"
 
 /**
  * @param {Parser<any>[]} a
@@ -17,31 +18,54 @@ const compareArrays = (a, b) => {
 test("Test 1", async ({ page }) => {
     let p = /** @type {Regexer<Parser<any>>} */(R.str("a"))
     expect(p.getParser().matchesEmpty()).toBeFalsy()
-    compareArrays(p.getParser().starterList(), [R.str("a").getParser()])
+    compareArrays(p.getParser().terminalList(Parser.TerminalType.STARTING), [R.str("a").getParser()])
+    compareArrays(p.getParser().terminalList(Parser.TerminalType.ONLY), [R.str("a").getParser()])
+    compareArrays(p.getParser().terminalList(Parser.TerminalType.ENDING), [R.str("a").getParser()])
     p = p.opt()
     expect(p.getParser().matchesEmpty()).toBeTruthy()
-    compareArrays(p.getParser().starterList(), [R.str("a").getParser(), R.success().getParser()])
+    compareArrays(p.getParser().terminalList(Parser.TerminalType.STARTING), [R.str("a").getParser(), R.success().getParser()])
+    compareArrays(p.getParser().terminalList(Parser.TerminalType.ONLY), [R.str("a").getParser(), R.success().getParser()])
+    compareArrays(p.getParser().terminalList(Parser.TerminalType.ENDING), [R.str("a").getParser(), R.success().getParser()])
 })
 
 test("Test 2", async ({ page }) => {
     const p = R.str("").getParser()
     expect(p.matchesEmpty()).toBeTruthy()
-    compareArrays(p.starterList(), [R.success().getParser()])
+    compareArrays(p.terminalList(Parser.TerminalType.STARTING), [R.success().getParser()])
+    compareArrays(p.terminalList(Parser.TerminalType.ONLY), [R.success().getParser()])
+    compareArrays(p.terminalList(Parser.TerminalType.ENDING), [R.success().getParser()])
 })
 
 test("Test 3", async ({ page }) => {
     const p = R.alt(
         R.nonGrp(R.str("alpha")),
-        R.str("beta"),
+        R.seq(R.str("beta"), R.str("beta2")),
         R.lazy(() => R.grp(R.str(""))),
         R.regexp(/gamma/),
     ).getParser()
     expect(p.matchesEmpty()).toBeTruthy()
     compareArrays(
-        p.starterList(),
+        p.terminalList(Parser.TerminalType.STARTING),
         [
             R.str("alpha").getParser(),
             R.str("beta").getParser(),
+            R.success().getParser(),
+            R.regexp(/gamma/).getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ONLY),
+        [
+            R.str("alpha").getParser(),
+            R.success().getParser(),
+            R.regexp(/gamma/).getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("alpha").getParser(),
+            R.str("beta2").getParser(),
             R.success().getParser(),
             R.regexp(/gamma/).getParser(),
         ]
@@ -61,10 +85,27 @@ test("Test 4", async ({ page }) => {
         .getParser()
     expect(p.matchesEmpty()).toBeTruthy()
     compareArrays(
-        p.starterList(),
+        p.terminalList(Parser.TerminalType.STARTING),
         [
             R.str("first").getParser(),
             R.str("second").getParser(),
+            R.success().getParser(),
+            R.number.getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ONLY),
+        [
+            R.str("first").getParser(),
+            R.success().getParser(),
+            R.number.getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("first").getParser(),
+            R.str("third").getParser(),
             R.success().getParser(),
             R.number.getParser(),
         ]
@@ -79,10 +120,24 @@ test("Test 5", async ({ page }) => {
         .getParser()
     expect(p.matchesEmpty()).toBeTruthy()
     compareArrays(
-        p.starterList(),
+        p.terminalList(Parser.TerminalType.STARTING),
         [
             R.regexp(/a/).getParser(),
             R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ONLY),
+        [
+            R.regexp(/a/).getParser(),
+            R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.success().getParser(),
+            R.regexp(/a/).getParser(),
         ]
     )
 })
@@ -94,18 +149,43 @@ test("Test 6", async ({ page }) => {
     )).map(() => "")
     expect(p.getParser().matchesEmpty()).toBeFalsy()
     compareArrays(
-        p.getParser().starterList(),
+        p.getParser().terminalList(Parser.TerminalType.STARTING),
         [
-            R.success().getParser(),
+            R.str(" ").getParser(),
+        ]
+    )
+    compareArrays(
+        p.getParser().terminalList(Parser.TerminalType.ONLY),
+        [
+            R.str(" ").getParser(),
+        ]
+    )
+    compareArrays(
+        p.getParser().terminalList(Parser.TerminalType.ENDING),
+        [
             R.str(" ").getParser(),
         ]
     )
     expect(p.many().getParser().matchesEmpty()).toBeTruthy()
     compareArrays(
-        p.many().getParser().starterList(),
+        p.many().getParser().terminalList(Parser.TerminalType.STARTING),
         [
-            R.success().getParser(),
             R.str(" ").getParser(),
+            R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        p.many().getParser().terminalList(Parser.TerminalType.ONLY),
+        [
+            R.str(" ").getParser(),
+            R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        p.many().getParser().terminalList(Parser.TerminalType.STARTING),
+        [
+            R.str(" ").getParser(),
+            R.success().getParser(),
         ]
     )
 
@@ -124,11 +204,24 @@ test("Test 7", async ({ page }) => {
         .getParser()
     expect(p.matchesEmpty()).toBeTruthy()
     compareArrays(
-        p.starterList(),
+        p.terminalList(Parser.TerminalType.STARTING),
         [
             R.success().getParser(),
-            R.str("apple").getParser(),
             R.str("abc").getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ONLY),
+        [
+            R.success().getParser(),
+            R.str("abc").getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("abc").getParser(),
+            R.success().getParser(),
         ]
     )
 })
@@ -148,29 +241,70 @@ test("Test 8", async ({ page }) => {
     const r3 = Grammar.r3.getParser().parsers[2]
     const context = Reply.makeContext(null, "")
     expect(Grammar.r1.getParser().matchesEmpty()).toBeFalsy()
+
+    // r1
     compareArrays(
-        r1.starterList(),
+        r1.terminalList(Parser.TerminalType.STARTING),
         [
             R.str("a").getParser(),
             R.success().getParser(),
         ]
     )
     compareArrays(
-        r2.starterList(),
+        r1.terminalList(Parser.TerminalType.ONLY),
+        [R.success().getParser()]
+    )
+    compareArrays(
+        r1.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("a").getParser(),
+            R.success().getParser(),
+        ]
+    )
+
+    // r2
+    compareArrays(
+        r2.terminalList(Parser.TerminalType.STARTING),
         [
             R.str("a").getParser(),
             R.success().getParser(),
         ]
     )
     compareArrays(
-        r3.starterList(),
+        r2.terminalList(Parser.TerminalType.ONLY),
+        [R.success().getParser()]
+    )
+    compareArrays(
+        r2.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("a").getParser(),
+            R.success().getParser(),
+        ]
+    )
+
+    // r3
+    compareArrays(
+        r3.terminalList(Parser.TerminalType.STARTING),
         [
             R.str("a").getParser(),
             R.success().getParser(),
         ]
     )
     compareArrays(
-        r1.starterList(context, [r1]),
+        r3.terminalList(Parser.TerminalType.ONLY),
+        [R.success().getParser()]
+    )
+    compareArrays(
+        r3.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("a").getParser(),
+            R.success().getParser(),
+        ]
+    )
+
+    // r1 on terminals
+    compareArrays(
+        r1.terminalList(Parser.TerminalType.STARTING, context, [r1]),
         [
             r1,
             R.str("a").getParser(),
@@ -178,7 +312,24 @@ test("Test 8", async ({ page }) => {
         ]
     )
     compareArrays(
-        r2.starterList(context, [r2]),
+        r1.terminalList(Parser.TerminalType.ONLY, context, [r1]),
+        [
+            r1,
+            R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        r1.terminalList(Parser.TerminalType.ENDING, context, [r1]),
+        [
+            r1,
+            R.str("a").getParser(),
+            R.success().getParser(),
+        ]
+    )
+
+    // r2 on terminals
+    compareArrays(
+        r2.terminalList(Parser.TerminalType.STARTING, context, [r2]),
         [
             r2,
             R.str("a").getParser(),
@@ -186,11 +337,112 @@ test("Test 8", async ({ page }) => {
         ]
     )
     compareArrays(
-        r3.starterList(context, [r3]),
+        r2.terminalList(Parser.TerminalType.ONLY, context, [r2]),
+        [
+            r2,
+            R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        r2.terminalList(Parser.TerminalType.ENDING, context, [r2]),
+        [
+            r2,
+            R.str("a").getParser(),
+            R.success().getParser(),
+        ]
+    )
+
+    // r3 on terminals
+    compareArrays(
+        r3.terminalList(Parser.TerminalType.STARTING, context, [r3]),
         [
             r3,
             R.str("a").getParser(),
             R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        r3.terminalList(Parser.TerminalType.ONLY, context, [r3]),
+        [
+            r3,
+            R.success().getParser(),
+        ]
+    )
+    compareArrays(
+        r3.terminalList(Parser.TerminalType.ENDING, context, [r3]),
+        [
+            r3,
+            R.str("a").getParser(),
+            R.success().getParser(),
+        ]
+    )
+})
+
+test("Test 9", async ({ page }) => {
+    const p = R.seq(
+        R.str("a").opt(),
+        R.str("b").opt(),
+        R.str("c").opt(),
+        R.str("d").opt(),
+    ).getParser()
+    compareArrays(
+        p.terminalList(Parser.TerminalType.STARTING),
+        [
+            R.str("a").getParser(),
+            R.success().getParser(),
+            R.str("b").getParser(),
+            R.str("c").getParser(),
+            R.str("d").getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ONLY),
+        [
+            R.str("a").getParser(),
+            R.success().getParser(),
+            R.str("b").getParser(),
+            R.str("c").getParser(),
+            R.str("d").getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("d").getParser(),
+            R.success().getParser(),
+            R.str("c").getParser(),
+            R.str("b").getParser(),
+            R.str("a").getParser(),
+        ]
+    )
+})
+
+test("Test 10", async ({ page }) => {
+    const p = R.seq(
+        R.str("a").opt(),
+        R.str("b").opt(),
+        R.str("c"),
+        R.str("d").opt(),
+    ).getParser()
+    compareArrays(
+        p.terminalList(Parser.TerminalType.STARTING),
+        [
+            R.str("a").getParser(),
+            R.str("b").getParser(),
+            R.str("c").getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ONLY),
+        [
+            R.str("c").getParser(),
+        ]
+    )
+    compareArrays(
+        p.terminalList(Parser.TerminalType.ENDING),
+        [
+            R.str("d").getParser(),
+            R.str("c").getParser(),
         ]
     )
 })

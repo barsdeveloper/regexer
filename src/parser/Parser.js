@@ -3,14 +3,24 @@ import Reply from "../Reply.js"
 /** @template T */
 export default class Parser {
 
+    /**
+     * @readonly
+     * @enum {Number}
+     */
+    static TerminalType = {
+        STARTING: -1,
+        ONLY: 0,
+        ENDING: 1,
+    }
+
     static isTerminal = false
     static indentation = "    "
 
     /** @type {Boolean?} */
     #matchesEmptyFlag
 
-    /** @type {Parser<any>[]} */
-    #starterList
+    /** @type {{[k: TerminalType]: Parser<any>[]}} */
+    #starterList = {}
 
     /** Calling parse() can make it change the overall parsing outcome */
     isActualParser = true
@@ -51,18 +61,22 @@ export default class Parser {
 
     /**
      * List of starting terminal parsers
+     * @param {TerminalType} type
      * @param {Parser<any>[]} additional Additional non terminal parsers that will be considered part of the starter list when encounter even though non terminals
      */
-    starterList(context = Reply.makeContext(null, ""), additional = []) {
-        if (!this.#starterList && !context.visited.has(this)) {
+    terminalList(type, context = Reply.makeContext(null, ""), additional = []) {
+        if (!this.#starterList[type]) {
+            if (context.visited.has(this)) {
+                return [] // Break the infinite recursion, this.#starterList[type] will be set elsewhere in the call stack
+            }
             context.visited.add(this)
-            this.#starterList = this.doStarterList(context, additional)
+            this.#starterList[type] = this.doTerminalList(type, context, additional)
             if (additional.length) {
-                this.#starterList = this.#starterList
+                this.#starterList[type] = this.#starterList[type]
                     .filter(v => !/** @type {typeof Parser} */(v.constructor).isTerminal && additional.includes(v))
             }
         }
-        let result = this.#starterList
+        let result = this.#starterList[type]
         if (!/** @type {typeof Parser} */(this.constructor).isTerminal && additional.includes(this)) {
             result = [this, ...result]
         }
@@ -71,12 +85,13 @@ export default class Parser {
 
     /**
      * @protected
+     * @param {TerminalType} type
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
         let unwrapped = this.unwrap()
         return unwrapped?.length === 1
-            ? unwrapped[0].starterList(context, additional)
+            ? unwrapped[0].terminalList(type, context, additional)
             : []
     }
 

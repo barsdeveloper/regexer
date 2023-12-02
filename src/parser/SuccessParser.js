@@ -7,6 +7,10 @@ export default class SuccessParser extends StringParser {
 
     static instance = new SuccessParser()
 
+    static {
+        StringParser.successParserInstance = this.instance
+    }
+
     constructor() {
         super("")
     }

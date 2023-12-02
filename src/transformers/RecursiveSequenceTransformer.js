@@ -25,7 +25,7 @@ export default class RecursiveSequenceTransformer extends ParentChildTransformer
      */
     doTransformParent(parent, child, index, previousChild) {
         const context = Reply.makeContext(null, "")
-        if (child.starterList(context, [parent]).some(starter => starter.equals(context, parent, false))) {
+        if (child.terminalList(context, [parent]).some(starter => starter.equals(context, parent, false))) {
             if (!child.matchesEmpty()) {
                 console.error(
                     "The following parser expects an infinite string\n"

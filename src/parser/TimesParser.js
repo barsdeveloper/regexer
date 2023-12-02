@@ -32,7 +32,7 @@ export default class TimesParser extends Parser {
     constructor(parser, min = 0, max = Number.POSITIVE_INFINITY) {
         super()
         if (min > max) {
-            throw new Error("Min is more than max")
+            throw new Error("Min is greater than max")
         }
         this.#parser = parser
         this.#min = min
@@ -48,8 +48,8 @@ export default class TimesParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
-        const result = this.#parser.starterList(context)
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+        const result = this.#parser.terminalList(type, context)
         if (this.matchesEmpty() && !result.some(p => SuccessParser.instance.equals(context, p, false))) {
             result.push(SuccessParser.instance)
         }

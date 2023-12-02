@@ -149,8 +149,8 @@ export default class Regexer {
         return new this(new RegExpParser(value, -1))
     }
 
-    static success(value = undefined) {
-        return new this(value === undefined ? SuccessParser.instance : new SuccessParser())
+    static success() {
+        return new this(SuccessParser.instance)
     }
 
     static failure() {
@@ -225,7 +225,7 @@ export default class Regexer {
         // @ts-expect-error
         return this.Self.alt(
             this,
-            this.Self.success(null)
+            this.Self.success()
         )
     }
 

@@ -8,6 +8,7 @@ import Reply from "../Reply.js"
 export default class StringParser extends Parser {
 
     static isTerminal = true
+    static successParserInstance
 
     #value
     get value() {
@@ -29,7 +30,10 @@ export default class StringParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+        if (this.value === "") {
+            return [StringParser.successParserInstance]
+        }
         return [this]
     }
 
@@ -73,7 +77,7 @@ export default class StringParser extends Parser {
      */
     doToString(context, indent = 0) {
         const inlined = this.value.replaceAll("\n", "\\n")
-        return this.value.length > 1 || this.value[0] === " "
+        return this.value.length !== 1 || this.value.trim() !== this.value
             ? `"${inlined.replaceAll('"', '\\"')}"`
             : inlined
     }

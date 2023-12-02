@@ -11,7 +11,7 @@ export default class FailureParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doTerminalList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
         return [this]
     }
 

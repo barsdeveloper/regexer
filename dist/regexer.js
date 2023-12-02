@@ -89,14 +89,24 @@ class Reply {
 /** @template T */
 class Parser {
 
+    /**
+     * @readonly
+     * @enum {Number}
+     */
+    static TerminalType = {
+        STARTING: -1,
+        ONLY: 0,
+        ENDING: 1,
+    }
+
     static isTerminal = false
     static indentation = "    "
 
     /** @type {Boolean?} */
     #matchesEmptyFlag
 
-    /** @type {Parser<any>[]} */
-    #starterList
+    /** @type {{[k: TerminalType]: Parser<any>[]}} */
+    #starterList = {}
 
     /** Calling parse() can make it change the overall parsing outcome */
     isActualParser = true
@@ -137,18 +147,22 @@ class Parser {
 
     /**
      * List of starting terminal parsers
+     * @param {TerminalType} type
      * @param {Parser<any>[]} additional Additional non terminal parsers that will be considered part of the starter list when encounter even though non terminals
      */
-    starterList(context = Reply.makeContext(null, ""), additional = []) {
-        if (!this.#starterList && !context.visited.has(this)) {
+    terminalList(type, context = Reply.makeContext(null, ""), additional = []) {
+        if (!this.#starterList[type]) {
+            if (context.visited.has(this)) {
+                return [] // Break the infinite recursion, this.#starterList[type] will be set elsewhere in the call stack
+            }
             context.visited.add(this);
-            this.#starterList = this.doStarterList(context, additional);
+            this.#starterList[type] = this.doTerminalList(type, context, additional);
             if (additional.length) {
-                this.#starterList = this.#starterList
+                this.#starterList[type] = this.#starterList[type]
                     .filter(v => !/** @type {typeof Parser} */(v.constructor).isTerminal && additional.includes(v));
             }
         }
-        let result = this.#starterList;
+        let result = this.#starterList[type];
         if (!/** @type {typeof Parser} */(this.constructor).isTerminal && additional.includes(this)) {
             result = [this, ...result];
         }
@@ -157,12 +171,13 @@ class Parser {
 
     /**
      * @protected
+     * @param {TerminalType} type
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
         let unwrapped = this.unwrap();
         return unwrapped?.length === 1
-            ? unwrapped[0].starterList(context, additional)
+            ? unwrapped[0].terminalList(type, context, additional)
             : []
     }
 
@@ -295,6 +310,7 @@ class Parser {
 class StringParser extends Parser {
 
     static isTerminal = true
+    static successParserInstance
 
     #value
     get value() {
@@ -316,7 +332,10 @@ class StringParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+        if (this.value === "") {
+            return [StringParser.successParserInstance]
+        }
         return [this]
     }
 
@@ -360,7 +379,7 @@ class StringParser extends Parser {
      */
     doToString(context, indent = 0) {
         const inlined = this.value.replaceAll("\n", "\\n");
-        return this.value.length > 1 || this.value[0] === " "
+        return this.value.length !== 1 || this.value.trim() !== this.value
             ? `"${inlined.replaceAll('"', '\\"')}"`
             : inlined
     }
@@ -370,6 +389,10 @@ class StringParser extends Parser {
 class SuccessParser extends StringParser {
 
     static instance = new SuccessParser()
+
+    static {
+        StringParser.successParserInstance = this.instance;
+    }
 
     constructor() {
         super("");
@@ -428,9 +451,9 @@ class AlternativeParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
         return this.#parsers
-            .flatMap(p => p.starterList(context, additional))
+            .flatMap(p => p.terminalList(type, context))
             .reduce(
                 (acc, cur) => acc.some(p => p.equals(context, cur, true)) ? acc : (acc.push(cur), acc),
                 /** @type {Parser<any>[]} */([])
@@ -605,7 +628,7 @@ class FailureParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(context, additional = /** @type {Parser<any>[]} */([])) {
         return [this]
     }
 
@@ -745,6 +768,14 @@ class LookaroundParser extends Parser {
         super();
         this.#parser = parser;
         this.#type = type;
+    }
+
+    /**
+     * @protected
+     * @param {Context} context
+     */
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+        return []
     }
 
     unwrap() {
@@ -923,7 +954,7 @@ class RegExpParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
         return [this]
     }
 
@@ -987,13 +1018,37 @@ class SequenceParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
-        const result = this.#parsers[0].starterList(context);
-        for (let i = 1; i < this.#parsers.length && this.#parsers[i - 1].matchesEmpty(); ++i) {
-            this.#parsers[i].starterList(context).reduce(
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+        if (type === 0) {
+            for (let i = 0; i < this.#parsers.length; ++i) {
+                if (!this.#parsers[i].matchesEmpty()) {
+                    for (let j = this.#parsers.length - 1; j >= i; --j) {
+                        if (!this.#parsers[j].matchesEmpty()) {
+                            if (i == j) {
+                                return this.#parsers[i].terminalList(type, context, additional)
+                            } else {
+                                return []
+                            }
+                        }
+                    }
+                }
+            }
+            type = Parser.TerminalType.STARTING;
+        }
+        let i = type < 0 ? 0 : this.#parsers.length - 1;
+        const delta = -type;
+        const result = this.#parsers[i].terminalList(type, context);
+        for (i += delta; i >= 0 && i < this.#parsers.length && this.#parsers[i - delta].matchesEmpty(); i += delta) {
+            this.#parsers[i].terminalList(type, context).reduce(
                 (acc, cur) => acc.some(p => p.equals(context, cur, false)) ? acc : (acc.push(cur), acc),
                 result
             );
+        }
+        if (!this.#parsers[i - delta].matchesEmpty()) {
+            const position = result.indexOf(SuccessParser.instance);
+            if (position >= 0) {
+                result.splice(position, 1);
+            }
         }
         return result
     }
@@ -1096,7 +1151,7 @@ class TimesParser extends Parser {
     constructor(parser, min = 0, max = Number.POSITIVE_INFINITY) {
         super();
         if (min > max) {
-            throw new Error("Min is more than max")
+            throw new Error("Min is greater than max")
         }
         this.#parser = parser;
         this.#min = min;
@@ -1112,8 +1167,8 @@ class TimesParser extends Parser {
      * @protected
      * @param {Context} context
      */
-    doStarterList(context, additional = /** @type {Parser<any>[]} */([])) {
-        const result = this.#parser.starterList(context);
+    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+        const result = this.#parser.terminalList(type, context);
         if (this.matchesEmpty() && !result.some(p => SuccessParser.instance.equals(context, p, false))) {
             result.push(SuccessParser.instance);
         }
@@ -1331,8 +1386,8 @@ class Regexer {
         return new this(new RegExpParser(value, -1))
     }
 
-    static success(value = undefined) {
-        return new this(value === undefined ? SuccessParser.instance : new SuccessParser())
+    static success() {
+        return new this(SuccessParser.instance)
     }
 
     static failure() {
@@ -1407,7 +1462,7 @@ class Regexer {
         // @ts-expect-error
         return this.Self.alt(
             this,
-            this.Self.success(null)
+            this.Self.success()
         )
     }
 

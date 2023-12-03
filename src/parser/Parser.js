@@ -69,7 +69,7 @@ export default class Parser {
             if (context.visited.has(this)) {
                 return [] // Break the infinite recursion, this.#starterList[type] will be set elsewhere in the call stack
             }
-            context.visited.add(this)
+            context.visited.set(this, null)
             this.#starterList[type] = this.doTerminalList(type, context, additional)
             if (additional.length) {
                 this.#starterList[type] = this.#starterList[type]
@@ -204,7 +204,7 @@ export default class Parser {
         if (context.visited.has(this)) {
             return "<...>" // Recursive parser
         }
-        context.visited.add(this)
+        context.visited.set(this, null)
         return this.doToString(context, indent)
     }
 

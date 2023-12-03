@@ -27,11 +27,11 @@ export default class ParentChildTransformer extends Transformer {
     /**
      * @protected
      * @template {Parser<any>} T
+     * @param {Context} context
      * @param {T} parser
-     * @param {Map<Parser<any>, Parser<any>>} visited
      * @return {T}
      */
-    doTransform(parser, visited) {
+    doTransform(context, parser) {
         const Self = /** @type {typeof ParentChildTransformer} */(this.constructor)
         let changed = false
         let children = parser.unwrap()
@@ -39,19 +39,19 @@ export default class ParentChildTransformer extends Transformer {
             let previous = null
             let current = previous
             if (this.#childTypes.length === 0) {
-                const newParent = this.doTransformParent(parser, null, -1, null)
+                const newParent = this.doTransformParent(context, parser, null, -1, null)
                 if (newParent && newParent != parser) {
-                    return /** @type {T} */(this.transform(newParent, visited))
+                    return /** @type {T} */(this.transform(context, newParent))
                 }
             } else {
                 for (let i = 0; i < children.length; previous = current, ++i) {
                     current = children[i].actualParser(this.traverse, this.opaque)
                     if (this.#childTypes.find(t => current instanceof t)) {
-                        const newParent = this.doTransformParent(parser, current, i, previous)
+                        const newParent = this.doTransformParent(context, parser, current, i, previous)
                         if (newParent && newParent != parser) {
-                            return /** @type {T} */(this.transform(newParent, visited))
+                            return /** @type {T} */(this.transform(context, newParent))
                         }
-                        const newChildren = this.doTransformChild(parser, current, i, previous)
+                        const newChildren = this.doTransformChild(context, parser, current, i, previous)
                         if (newChildren && (newChildren.length !== 1 || newChildren[0] !== current)) {
                             const offset = Self.replaceBothChildren ? 1 : 0
                             current = newChildren[0]
@@ -65,7 +65,7 @@ export default class ParentChildTransformer extends Transformer {
                             continue
                         }
                     }
-                    const transformed = this.transform(current, visited)
+                    const transformed = this.transform(context, current)
                     if (current !== transformed) {
                         children[i] = children[i].withActualParser(transformed, this.traverse, this.opaque)
                         changed = true
@@ -74,13 +74,13 @@ export default class ParentChildTransformer extends Transformer {
             }
         } else {
             children = children.map(child => {
-                const transformed = this.transform(child, visited)
+                const transformed = this.transform(context, child)
                 changed ||= child !== transformed
                 return transformed
             })
         }
         if (changed) {
-            return /** @type {T} */(this.transform(parser.wrap(...children), visited))
+            return /** @type {T} */(this.transform(context, parser.wrap(...children)))
         }
         return parser
     }
@@ -88,26 +88,28 @@ export default class ParentChildTransformer extends Transformer {
     /**
      * Replace the parent parser with another parser
      * @protected
+     * @param {Context} context
      * @param {Parser<any>} parent
      * @param {Parser<any>} child
      * @param {Number} index
      * @param {Parser<any>} previousChild
      * @returns {Parser<any>?}
      */
-    doTransformParent(parent, child, index, previousChild) {
+    doTransformParent(context, parent, child, index, previousChild) {
         return null
     }
 
     /**
      * Replace the given child with other children
      * @protected
+     * @param {Context} context
      * @param {Parser<any>} parent
      * @param {Parser<any>} child
      * @param {Number} index
      * @param {Parser<any>} previousChild
      * @returns {Parser<any>[]?}
      */
-    doTransformChild(parent, child, index, previousChild) {
+    doTransformChild(context, parent, child, index, previousChild) {
         return null
     }
 }

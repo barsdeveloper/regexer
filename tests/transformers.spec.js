@@ -56,7 +56,7 @@ test("Inline parsers 1", ({ page }) => {
                         ),
                     ),
                 ).map(f1)
-            ).getParser()
+            )
         ),
         R.alt(
             R.grp(R.grp(R.str("a"), "alpha").map(f1), "bravo"),
@@ -124,7 +124,7 @@ test("Inline parsers 2", ({ page }) => {
                     ).map(f1),
                     "india"
                 )
-            ).getParser()
+            )
         ),
         R.nonGrp(
             R.grp(
@@ -250,7 +250,7 @@ test("Inline parsers 3", ({ page }) => {
                         ),
                     ),
                     "aaa"
-                )).getParser()
+                ))
             ),
             R.lazy(() => R.grp(
                 R.seq(
@@ -302,7 +302,7 @@ test("Remove discarded map 1", ({ page }) => {
     expect(
         R.equals(
             removeDiscardedMap.run(
-                R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta").map(f1)).map(f2))).getParser()
+                R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta").map(f1)).map(f2)))
             ),
             R.seq(R.str("alpha"), R.lookahead(R.nonGrp(R.str("beta")))),
             true
@@ -332,7 +332,7 @@ test("Remove discarded map 2", ({ page }) => {
                     R.anyChar(),
                     R.optWhitespace,
                     R.lookaround(R.lazy(() => R.grp(R.lazy(() => R.number), "second").map(f1)))
-                )).getParser()
+                ))
             ),
             R.grp(R.alt(
                 R.seq(
@@ -367,7 +367,7 @@ test("Remove lazy", ({ page }) => {
     }
     expect(
         R.equals(
-            removeLazy.run(Grammar.root.getParser()),
+            removeLazy.run(Grammar.root),
             R.alt(
                 R.seq(
                     R.alt(Grammar.a, Grammar.b),
@@ -392,7 +392,7 @@ test("Remove trivial parsers 1", ({ page }) => {
                     R.success(),
                     R.regexp(/c/).many(),
                     R.regexp(/d/)
-                ).getParser()
+                )
             ),
             R.alt(R.grp(R.str("a").map(f2)), R.nonGrp(R.str("b"))),
             true
@@ -405,7 +405,7 @@ test("Remove trivial parsers 2", ({ page }) => {
     expect(
         R.equals(
             removeTrivialParsers.run(
-                R.alt(R.str("a"), R.failure(), R.str("b"), R.failure(), R.str("c"), R.str("d"), R.failure()).getParser()
+                R.alt(R.str("a"), R.failure(), R.str("b"), R.failure(), R.str("c"), R.str("d"), R.failure())
             ),
             R.alt(R.str("a"), R.str("b"), R.str("c"), R.str("d")),
             true
@@ -418,7 +418,7 @@ test("Remove trivial parsers 3", ({ page }) => {
     expect(
         R.equals(
             removeTrivialParsers.run(
-                R.seq(R.str("a"), R.success(), R.str("b"), R.success(), R.str("c")).getParser()
+                R.seq(R.str("a"), R.success(), R.str("b"), R.success(), R.str("c"))
             ),
             R.seq(R.str("a"), R.str("b"), R.str("c")),
             true
@@ -431,7 +431,7 @@ test("Remove trivial parsers 4", ({ page }) => {
     expect(
         R.equals(
             removeTrivialParsers.run(
-                R.seq(R.str("a"), R.str("b"), R.failure(), R.str("c")).getParser()
+                R.seq(R.str("a"), R.str("b"), R.failure(), R.str("c"))
             ),
             R.failure(),
             true
@@ -444,7 +444,7 @@ test("Remove trivial parsers 5", ({ page }) => {
     expect(
         R.equals(
             removeTrivialParsers.run(
-                R.seq(R.number, R.grp(R.nonGrp(R.success()).map(f1).atLeast(20)).map(f3), R.str("a")).getParser()
+                R.seq(R.number, R.grp(R.nonGrp(R.success()).map(f1).atLeast(20)).map(f3), R.str("a"))
             ),
             R.seq(R.number, R.str("a"))
         )
@@ -470,7 +470,7 @@ test("Merge strings 1", ({ page }) => {
                     R.str("e"),
                     R.str("f"),
                     R.str("g"),
-                ).getParser()
+                )
             ),
             R.seq(
                 R.str("abcd"),
@@ -497,7 +497,7 @@ test("Merge strings 2", ({ page }) => {
                     R.str("a").map(v => a = `1${v}`),
                     R.str("b").map(v => b = `2${v}`),
                     R.str("c").map(v => c = `3${v}`),
-                ).getParser()
+                )
             ),
             // @ts-expect-error
             R.seq(R.str("abc")),
@@ -511,7 +511,7 @@ test("Recursive sequence", ({ page }) => {
     const p = R.seq(R.str("a"), R.str("b"), R.lazy(() => p.opt()))
     expect(
         R.equals(
-            recursiveSequence.run(p.getParser()),
+            recursiveSequence.run(p),
             R.seq(R.str("a"), R.str("b")).atLeast(1),
             true
         )

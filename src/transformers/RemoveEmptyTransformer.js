@@ -11,13 +11,14 @@ export default class RemoveEmptyTransformer extends ParentChildTransformer {
 
     /**
      * @protected
+     * @param {Context} context
      * @param {Parser<any>} parent
      * @param {Parser<any>} child
      * @param {Number} index
      * @param {Parser<any>} previousChild
      * @returns {Parser<any>[]?}
      */
-    doTransformChild(parent, child, index, previousChild) {
+    doTransformChild(context, parent, child, index, previousChild) {
         if (!parent.matchesEmpty() && child.matchesEmpty()) {
             return []
         }

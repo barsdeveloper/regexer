@@ -28,6 +28,7 @@ export default class RemoveTrivialParsersTransformer extends ParentChildTransfor
 
     /**
      * @protected
+     * @param {Context} context
      * @param {AlternativeParser<Parser<any>[]>
      *     | SequenceParser<Parser<any>[]>
      *     | TimesParser<Parser<any>>
@@ -39,7 +40,7 @@ export default class RemoveTrivialParsersTransformer extends ParentChildTransfor
      * @param {Parser<any>} previousChild
      * @returns {Parser<any>?}
      */
-    doTransformParent(parent, child, index, previousChild) {
+    doTransformParent(context, parent, child, index, previousChild) {
         if (parent instanceof AlternativeParser && child instanceof SuccessParser) {
             return parent.wrap(...parent.parsers.slice(0, index))
         }
@@ -55,6 +56,7 @@ export default class RemoveTrivialParsersTransformer extends ParentChildTransfor
 
     /**
      * @protected
+     * @param {Context} context
      * @param {AlternativeParser<Parser<any>[]>
      *     | SequenceParser<Parser<any>[]>
      *     | TimesParser<Parser<any>>
@@ -66,7 +68,7 @@ export default class RemoveTrivialParsersTransformer extends ParentChildTransfor
      * @param {Parser<any>} previousChild
      * @returns {Parser<any>[]}
      */
-    doTransformChild(parent, child, index, previousChild) {
+    doTransformChild(context, parent, child, index, previousChild) {
         if (
             parent instanceof AlternativeParser && child instanceof FailureParser
             || parent instanceof SequenceParser && child instanceof SuccessParser

@@ -42,7 +42,7 @@ export default class Reply {
             regexer: regexer,
             input: input,
             equals: new PairMap(),
-            visited: new Set(),
+            visited: new Map(),
         })
     }
 }

@@ -1,5 +1,6 @@
 import CapturingGroupParser from "../parser/CapturingGroupParser.js"
 import Regexer from "../Regexer.js"
+import Reply from "../Reply.js"
 
 export default class Transformer {
 
@@ -21,15 +22,16 @@ export default class Transformer {
 
     /**
      * @template {Parser<any>} T
-     * @param {T} regexer
-     * @return {T}
+     * @param {Regexer<T>} regexer
+     * @return {Regexer<T>}
      */
     run(regexer) {
-        const parser = regexer.actualParser(this.traverse, this.opaque)
-        let transformed = this.transform(parser, new Map())
-        if (parser !== transformed) {
-            transformed = regexer.withActualParser(transformed, this.traverse, this.opaque)
-            return /** @type {T} */(transformed)
+        const parser = regexer.getParser().actualParser(this.traverse, this.opaque)
+        let transformed = this.transform(Reply.makeContext(regexer, ""), parser)
+        if (transformed !== parser) {
+            const RegexerType = /** @type {typeof Regexer} */(regexer.constructor)
+            transformed = regexer.getParser().withActualParser(transformed, this.traverse, this.opaque)
+            return new RegexerType(/** @type {T} */(transformed))
         }
         return regexer
     }
@@ -37,29 +39,29 @@ export default class Transformer {
     /**
      * @protected
      * @template {Parser<any>} T
+     * @param {Context} context
      * @param {T} parser
-     * @param {Map<Parser<any>, Parser<any>>} visited
      * @return {T}
      */
-    transform(parser, visited) {
-        let result = /** @type {T} */(visited.get(parser))
-        if (result) {
+    transform(context, parser) {
+        let result = /** @type {T} */(context.visited.get(parser))
+        if (result !== undefined) {
             return result
         }
-        visited.set(parser, parser)
-        result = this.doTransform(parser, visited)
-        visited.set(parser, result)
+        context.visited.set(parser, parser)
+        result = this.doTransform(context, parser)
+        context.visited.set(parser, result)
         return result
     }
 
     /**
      * @protected
      * @template {Parser<any>} T
+     * @param {Context} context
      * @param {T} parser
-     * @param {Map<Parser<any>, Parser<any>>} visited
      * @return {T}
      */
-    doTransform(parser, visited) {
+    doTransform(context, parser) {
         return parser
     }
 }

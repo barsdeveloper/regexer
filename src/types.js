@@ -51,7 +51,7 @@
  *     regexer: Regexer,
  *     input: String,
  *     equals: PairMap<Boolean>,
- *     visited: Set<Parser<any>>,
+ *     visited: Map<Parser<any>, any>,
  * }} Context
  */
 

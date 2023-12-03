@@ -11,10 +11,11 @@ export default class RemoveLazyTransformer extends ParentChildTransformer {
 
     /**
      * @protected
+     * @param {Context} context
      * @param {LazyParser<any>} parent
      * @returns {Parser<any>?}
      */
-    doTransformParent(parent) {
+    doTransformParent(context, parent) {
         let children = parent.unwrap()
         return children[0]
     }

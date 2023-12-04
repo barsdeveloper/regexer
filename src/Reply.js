@@ -37,7 +37,7 @@ export default class Reply {
     }
 
     /** @param {Regexer<Parser<any>>} regexer */
-    static makeContext(regexer, input = "") {
+    static makeContext(regexer = null, input = "") {
         return /** @type {Context} */({
             regexer: regexer,
             input: input,

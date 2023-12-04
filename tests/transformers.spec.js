@@ -2,11 +2,13 @@ import { test, expect } from "@playwright/test"
 import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
 import LookaroundParser from "../src/parser/LookaroundParser.js"
 import MergeStringsTransformer from "../src/transformers/MergeStringsTransformer.js"
+import Parser from "../src/parser/Parser.js"
 import RecursiveSequenceTransformer from "../src/transformers/RecursiveSequenceTransformer.js"
 import RegExpGrammar, { R } from "../src/grammars/RegExpGrammar.js"
 import RemoveDiscardedMapTransformer from "../src/transformers/RemoveDiscardedMapTransformer.js"
 import RemoveLazyTransformer from "../src/transformers/RemoveLazyTransformer.js"
 import RemoveTrivialParsersTransformer from "../src/transformers/RemoveTrivialParsersTransformer.js"
+import SequenceParser from "../src/parser/SequenceParser.js"
 
 const f1 = v => "f1"
 const f2 = v => "f2"
@@ -505,10 +507,18 @@ test("Merge strings 2", ({ page }) => {
     ).toBeTruthy()
 })
 
-test("Recursive sequence", ({ page }) => {
+test("Recursive sequence 1", ({ page }) => {
     const recursiveSequence = new RecursiveSequenceTransformer()
-    /** @type {Regexer<any>} */
+    /** @type {Regexer<SequenceParser<Parser<any>[]>>} */
     const p = R.seq(R.str("a"), R.str("b"), R.lazy(() => p.opt()))
+    const lastChild = p.getParser().parsers[2]
+    // Preperatory test for RecursiveSequenceTransformer, make sure to debug this one first
+    let terminalList = p.getParser().terminalList(Parser.TerminalType.ENDING, [lastChild])
+    expect(terminalList).toEqual([lastChild, p.getParser().parsers[1]])
+    // Test memoization
+    terminalList = p.getParser().terminalList(Parser.TerminalType.ENDING, [lastChild])
+    expect(terminalList).toEqual([lastChild, p.getParser().parsers[1]])
+    // Actual test
     expect(
         R.equals(
             recursiveSequence.run(p),
@@ -516,6 +526,13 @@ test("Recursive sequence", ({ page }) => {
             true
         )
     ).toBeTruthy()
+})
+
+test("Recursive sequence 2", ({ page }) => {
+    const recursiveSequence = new RecursiveSequenceTransformer()
+    /** @type {Regexer<any>} */
+    const p = R.seq(R.str("a"), R.str("b"), R.lazy(() => p.opt()), R.str("c"))
+    expect(recursiveSequence.run(p) === p).toBeTruthy()
 })
 
 // test("Test 2", ({ page }) => {

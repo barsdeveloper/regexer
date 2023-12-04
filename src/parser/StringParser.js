@@ -28,9 +28,10 @@ export default class StringParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         if (this.value === "") {
             return [StringParser.successParserInstance]
         }

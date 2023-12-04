@@ -22,18 +22,20 @@ export default class Transformer {
 
     /**
      * @template {Parser<any>} T
-     * @param {Regexer<T>} regexer
+     * @param {Regexer<T> | T} g
      * @return {Regexer<T>}
      */
-    run(regexer) {
-        const parser = regexer.getParser().actualParser(this.traverse, this.opaque)
-        let transformed = this.transform(Reply.makeContext(regexer, ""), parser)
+    run(g, context = Reply.makeContext(g instanceof Regexer ? g : undefined)) {
+        const regexer = g instanceof Regexer ? g : context.regexer
+        const RegexerType = /** @type {typeof Regexer} */(regexer.constructor)
+        const parser = g instanceof Regexer ? g.getParser() : g
+        const actualParser = parser.actualParser(this.traverse, this.opaque)
+        let transformed = this.transform(context, actualParser)
         if (transformed !== parser) {
-            const RegexerType = /** @type {typeof Regexer} */(regexer.constructor)
-            transformed = regexer.getParser().withActualParser(transformed, this.traverse, this.opaque)
+            transformed = /** @type {T} */(parser.withActualParser(transformed, this.traverse, this.opaque))
             return new RegexerType(/** @type {T} */(transformed))
         }
-        return regexer
+        return g instanceof Regexer ? g : new RegexerType(g)
     }
 
     /**

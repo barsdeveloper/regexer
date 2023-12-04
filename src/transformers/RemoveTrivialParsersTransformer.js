@@ -10,6 +10,8 @@ import TimesParser from "../parser/TimesParser.js"
 /** @extends {ParentChildTransformer<[AlternativeParser, SequenceParser, TimesParser, CapturingGroupParser, NonCapturingGroupParser], [SuccessParser, FailureParser]>} */
 export default class RemoveTrivialParsersTransformer extends ParentChildTransformer {
 
+    static #arrayMapper = v => [v]
+
     constructor() {
         super(
             [

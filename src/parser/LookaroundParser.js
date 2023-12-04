@@ -37,9 +37,10 @@ export default class LookaroundParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         return []
     }
 

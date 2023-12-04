@@ -304,7 +304,7 @@ test("Test 8", async ({ page }) => {
 
     // r1 on terminals
     compareArrays(
-        r1.terminalList(Parser.TerminalType.STARTING, context, [r1]),
+        r1.terminalList(Parser.TerminalType.STARTING, [r1]),
         [
             r1,
             R.str("a").getParser(),
@@ -312,14 +312,14 @@ test("Test 8", async ({ page }) => {
         ]
     )
     compareArrays(
-        r1.terminalList(Parser.TerminalType.ONLY, context, [r1]),
+        r1.terminalList(Parser.TerminalType.ONLY, [r1]),
         [
             r1,
             R.success().getParser(),
         ]
     )
     compareArrays(
-        r1.terminalList(Parser.TerminalType.ENDING, context, [r1]),
+        r1.terminalList(Parser.TerminalType.ENDING, [r1]),
         [
             r1,
             R.str("a").getParser(),
@@ -329,7 +329,7 @@ test("Test 8", async ({ page }) => {
 
     // r2 on terminals
     compareArrays(
-        r2.terminalList(Parser.TerminalType.STARTING, context, [r2]),
+        r2.terminalList(Parser.TerminalType.STARTING, [r2]),
         [
             r2,
             R.str("a").getParser(),
@@ -337,14 +337,14 @@ test("Test 8", async ({ page }) => {
         ]
     )
     compareArrays(
-        r2.terminalList(Parser.TerminalType.ONLY, context, [r2]),
+        r2.terminalList(Parser.TerminalType.ONLY, [r2]),
         [
             r2,
             R.success().getParser(),
         ]
     )
     compareArrays(
-        r2.terminalList(Parser.TerminalType.ENDING, context, [r2]),
+        r2.terminalList(Parser.TerminalType.ENDING, [r2]),
         [
             r2,
             R.str("a").getParser(),
@@ -354,7 +354,7 @@ test("Test 8", async ({ page }) => {
 
     // r3 on terminals
     compareArrays(
-        r3.terminalList(Parser.TerminalType.STARTING, context, [r3]),
+        r3.terminalList(Parser.TerminalType.STARTING, [r3]),
         [
             r3,
             R.str("a").getParser(),
@@ -362,14 +362,14 @@ test("Test 8", async ({ page }) => {
         ]
     )
     compareArrays(
-        r3.terminalList(Parser.TerminalType.ONLY, context, [r3]),
+        r3.terminalList(Parser.TerminalType.ONLY, [r3]),
         [
             r3,
             R.success().getParser(),
         ]
     )
     compareArrays(
-        r3.terminalList(Parser.TerminalType.ENDING, context, [r3]),
+        r3.terminalList(Parser.TerminalType.ENDING, [r3]),
         [
             r3,
             R.str("a").getParser(),

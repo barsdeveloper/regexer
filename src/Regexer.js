@@ -268,10 +268,10 @@ export default class Regexer {
      * @return {Regexer<T>}
      */
     assert(fn) {
-        return this.chain((v, input, position) => fn(v, input, position)
+        return /** @type {Regexer<T>} */(this.chain((v, input, position) => fn(v, input, position)
             ? this.Self.success().map(() => v)
             : this.Self.failure()
-        )
+        ))
     }
 
     join(value = "") {

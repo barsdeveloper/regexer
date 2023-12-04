@@ -1,7 +1,6 @@
 import ParentChildTransformer from "./ParentChildTransformer.js"
 import Parser from "../parser/Parser.js"
 import RemoveEmptyTransformer from "./RemoveEmptyTransformer.js"
-import Reply from "../Reply.js"
 import SequenceParser from "../parser/SequenceParser.js"
 
 /** @extends {ParentChildTransformer<[SequenceParser], [Parser]>} */
@@ -24,23 +23,13 @@ export default class RecursiveSequenceTransformer extends ParentChildTransformer
      * @returns {Parser<any>?}
      */
     doTransformParent(context, parent, child, index, previousChild) {
-        const newContext = Reply.makeContext(null, "")
         if (
-            child
-                .terminalList(Parser.TerminalType.ONLY, newContext, [parent])
-                .some(starter => starter.equals(newContext, parent, false))
+            child.matchesEmpty()
+            && parent.terminalList(Parser.TerminalType.ENDING, [child])[0] === child
+            && child.terminalList(Parser.TerminalType.ONLY, [parent])[0] === parent
         ) {
-            if (!child.matchesEmpty()) {
-                console.error(
-                    "The following parser expects an infinite string\n"
-                    + parent.toString(newContext)
-                )
-                throw new Error("The parser expects an infinite string")
-            }
             const R = /** @type {new (...args: any) => Regexer<any>} */(context.regexer.constructor)
-            const repeated = RecursiveSequenceTransformer.#removeEmpty.run(
-                new R(parent.wrap(...parent.parsers.slice(0, index)))
-            )
+            const repeated = new R(parent.wrap(...parent.parsers.slice(0, index)))
             return repeated.atLeast(1).getParser()
         }
         return parent

@@ -33,19 +33,19 @@ export default class RecursiveSequenceTransformer extends ParentChildTransformer
             const R = /** @type {new (...args: any) => Regexer<any>} */(context.regexer.constructor)
             const repeated = new R(parent.wrap(...parent.parsers.slice(0, index)))
             const result = repeated.atLeast(1).chain(v =>
-                v.reduceRight(
+                new R(v.reduceRight(
                     (acc, cur) => {
                         const p = parent.unwrap()[index].withActualParser(
-                            acc[0].getParser(),
+                            acc[0],
                             [OptionalParser],
-                            [acc[1].getParser?.() ?? acc[1]]
+                            [acc[1]]
                         )
                         acc[1] = acc[0]
-                        acc[0] = (new R(p)).map(v => [cur, v])
+                        acc[0] = (new R(p)).map(v => [cur, v]).getParser()
                         return acc
                     },
-                    [R.success(), OptionalParser]
-                )[0]
+                    [new SuccessParser(), OptionalParser]
+                )[0])
             ).getParser()
             return result
         }

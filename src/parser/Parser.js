@@ -3,6 +3,7 @@ import Reply from "../Reply.js"
 /** @template T */
 export default class Parser {
 
+    #predicate = v => this === v || v instanceof Function && this instanceof v
     /**
      * @readonly
      * @enum {Number}
@@ -25,6 +26,9 @@ export default class Parser {
     /** Calling parse() can make it change the overall parsing outcome */
     isActualParser = true
 
+    /** @type {(new (...args: any) => Parser) & typeof Parser} */
+    Self
+
     /**
      * @param {Result<any>} a
      * @param {Result<any>} b
@@ -38,6 +42,11 @@ export default class Parser {
             position: a.position,
             value: a.value,
         })
+    }
+
+    constructor() {
+        // @ts-expect-error
+        this.Self = this.constructor
     }
 
     matchesEmpty() {
@@ -136,8 +145,7 @@ export default class Parser {
      * @returns {Parser<any>}
      */
     actualParser(traverse = [], opaque = []) {
-        let isTraversable = (!this.isActualParser || traverse.find(type => this instanceof type))
-            && !opaque.find(type => this instanceof type)
+        let isTraversable = (!this.isActualParser || traverse.some(this.#predicate)) && !opaque.some(this.#predicate)
         let unwrapped = isTraversable ? this.unwrap() : undefined
         isTraversable &&= unwrapped?.length === 1
         return isTraversable ? unwrapped[0].actualParser(traverse, opaque) : this
@@ -145,18 +153,15 @@ export default class Parser {
 
     /**
      * @param {Parser<any>} other
-     * @param {ConstructorType<Parser<any>>[]} traverse List of types to ignore and traverse even though they have isActualParser = true
-     * @param {ConstructorType<Parser<any>>[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @param {(Parser<any> | ConstructorType<Parser<any>>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {(Parser<any> | ConstructorType<Parser<any>>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
      * @returns {Parser<any>}
      */
     withActualParser(other, traverse = [], opaque = []) {
-        let isTraversable = (!this.isActualParser || traverse.some(type => this instanceof type))
-            && !opaque.some(type => this instanceof type)
+        let isTraversable = (!this.isActualParser || traverse.some(this.#predicate)) && !opaque.some(this.#predicate)
         let unwrapped = isTraversable ? this.unwrap() : undefined
         isTraversable &&= unwrapped?.length === 1
-        return isTraversable
-            ? this.wrap(unwrapped[0].withActualParser(other, traverse, opaque))
-            : other
+        return isTraversable ? this.wrap(unwrapped[0].withActualParser(other, traverse, opaque)) : other
     }
 
     /**

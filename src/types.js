@@ -26,6 +26,10 @@
  */
 
 /**
+ * @typedef {typeof import("./Regexer.js").default} RegexerClass
+ */
+
+/**
  * @template T
  * @typedef {T extends [infer A] ? A
  *     : T extends [infer A, ...infer B] ? (A | UnionFromArray<B>)

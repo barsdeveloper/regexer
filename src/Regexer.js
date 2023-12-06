@@ -11,6 +11,7 @@ import SequenceParser from "./parser/SequenceParser.js"
 import StringParser from "./parser/StringParser.js"
 import SuccessParser from "./parser/SuccessParser.js"
 import TimesParser from "./parser/TimesParser.js"
+import OptionalParser from "./parser/OptionalParser.js"
 
 /** @template {Parser<any>} T */
 export default class Regexer {
@@ -223,10 +224,7 @@ export default class Regexer {
     /** @returns {Regexer<T?>} */
     opt() {
         // @ts-expect-error
-        return this.Self.alt(
-            this,
-            this.Self.success()
-        )
+        return new this.Self(new OptionalParser(this.#parser))
     }
 
     /**

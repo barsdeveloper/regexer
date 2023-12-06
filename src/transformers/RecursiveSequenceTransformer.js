@@ -2,6 +2,8 @@ import ParentChildTransformer from "./ParentChildTransformer.js"
 import Parser from "../parser/Parser.js"
 import RemoveEmptyTransformer from "./RemoveEmptyTransformer.js"
 import SequenceParser from "../parser/SequenceParser.js"
+import SuccessParser from "../parser/SuccessParser.js"
+import OptionalParser from "../parser/OptionalParser.js"
 
 /** @extends {ParentChildTransformer<[SequenceParser], [Parser]>} */
 export default class RecursiveSequenceTransformer extends ParentChildTransformer {
@@ -30,7 +32,22 @@ export default class RecursiveSequenceTransformer extends ParentChildTransformer
         ) {
             const R = /** @type {new (...args: any) => Regexer<any>} */(context.regexer.constructor)
             const repeated = new R(parent.wrap(...parent.parsers.slice(0, index)))
-            return repeated.atLeast(1).getParser()
+            const result = repeated.atLeast(1).chain(v =>
+                v.reduceRight(
+                    (acc, cur) => {
+                        const p = parent.unwrap()[index].withActualParser(
+                            acc[0].getParser(),
+                            [OptionalParser],
+                            [acc[1].getParser?.() ?? acc[1]]
+                        )
+                        acc[1] = acc[0]
+                        acc[0] = (new R(p)).map(v => [cur, v])
+                        return acc
+                    },
+                    [R.success(), OptionalParser]
+                )[0]
+            ).getParser()
+            return result
         }
         return parent
     }

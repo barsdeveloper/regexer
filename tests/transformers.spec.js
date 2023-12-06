@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import ChainedParser from "../src/parser/ChainedParser.js"
 import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
 import LookaroundParser from "../src/parser/LookaroundParser.js"
 import MergeStringsTransformer from "../src/transformers/MergeStringsTransformer.js"
@@ -519,11 +520,14 @@ test("Recursive sequence 1", ({ page }) => {
     terminalList = p.getParser().terminalList(Parser.TerminalType.ENDING, [lastChild])
     expect(terminalList).toEqual([lastChild, p.getParser().parsers[1]])
     // Actual test
+    const transformed =  /** @type {Regexer<ChainedParser>} */(/** @type {unknown} */(recursiveSequence.run(p)))
+        .getParser()
+        .parser
     expect(
         R.equals(
-            recursiveSequence.run(p),
+            transformed,
             R.seq(R.str("a"), R.str("b")).atLeast(1),
-            true
+            false
         )
     ).toBeTruthy()
 })
@@ -532,7 +536,31 @@ test("Recursive sequence 2", ({ page }) => {
     const recursiveSequence = new RecursiveSequenceTransformer()
     /** @type {Regexer<any>} */
     const p = R.seq(R.str("a"), R.str("b"), R.lazy(() => p.opt()), R.str("c"))
+    const p2 = R.seq(R.str("a"), R.str("b"), R.lazy(() => p.opt()), R.str("c").opt())
     expect(recursiveSequence.run(p) === p).toBeTruthy()
+    expect(recursiveSequence.run(p2) === p2).toBeTruthy()
+})
+
+test("Recursive sequence 3", ({ page }) => {
+    const recursiveSequence = new RecursiveSequenceTransformer()
+    const f1 = /** @param {String} v */ v => `(${v})`
+    const f2 = /** @param {String} v */ v => `[${v}]`
+    const f3 = /** @param {String} v */ v => `{${v}}`
+    /** @type {Regexer<any>} */
+    const p = R.seq(R.regexp(/./), R.regexp(/./), R.lazy(() => p.map(f1).opt().map(f2)).map(f3))
+    const transformed =  /** @type {Regexer<ChainedParser>} */(/** @type {unknown} */(recursiveSequence.run(p)))
+    expect(
+        R.equals(transformed.getParser().parser, R.seq(R.regexp(/./), R.regexp(/./)).atLeast(1))
+    ).toBeTruthy()
+    const output = v => {
+        expect(v.toString()).toEqual("a,b,{[(c,d,{[(e,f,{[(g,h,{[]})]})]})]}")
+    }
+    p.map(output).parse("abcdefgh")
+    transformed.map(output).parse("abcdefgh")
+})
+
+test("Recursive sequence 4", ({ page }) => {
+
 })
 
 // test("Test 2", ({ page }) => {

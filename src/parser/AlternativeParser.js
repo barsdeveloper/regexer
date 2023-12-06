@@ -54,12 +54,12 @@ export default class AlternativeParser extends Parser {
     /**
      * @template {Parser<any>[]} T
      * @param {T} parsers
+     * @returns {AlternativeParser<T>}
      */
     wrap(...parsers) {
-        const result = new AlternativeParser(...parsers)
-        if (this.#backtracking) {
-            result.#backtracking = true
-        }
+        // @ts-expect-error
+        const result = /** @type {AlternativeParser<T>} */(new this.Self(...parsers))
+        result.#backtracking = this.#backtracking
         return result
     }
 

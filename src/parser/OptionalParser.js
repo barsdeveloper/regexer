@@ -11,7 +11,7 @@ export default class OptionalParser extends AlternativeParser {
         super(parser, SuccessParser.instance)
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.parsers[0]]
     }
 

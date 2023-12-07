@@ -1,9 +1,8 @@
+import AlternativeParser from "../parser/AlternativeParser.js"
 import ParentChildTransformer from "./ParentChildTransformer.js"
 import Parser from "../parser/Parser.js"
 import RemoveEmptyTransformer from "./RemoveEmptyTransformer.js"
 import SequenceParser from "../parser/SequenceParser.js"
-import SuccessParser from "../parser/SuccessParser.js"
-import OptionalParser from "../parser/OptionalParser.js"
 
 /** @extends {ParentChildTransformer<[SequenceParser], [Parser]>} */
 export default class RecursiveSequenceTransformer extends ParentChildTransformer {
@@ -25,27 +24,25 @@ export default class RecursiveSequenceTransformer extends ParentChildTransformer
      * @returns {Parser<any>?}
      */
     doTransformParent(context, parent, child, index, previousChild) {
-        if (
-            child.matchesEmpty()
-            && parent.terminalList(Parser.TerminalType.ENDING, [child])[0] === child
-            && child.terminalList(Parser.TerminalType.ONLY, [parent])[0] === parent
-        ) {
-            const R = /** @type {new (...args: any) => Regexer<any>} */(context.regexer.constructor)
-            const repeated = new R(parent.wrap(...parent.parsers.slice(0, index)))
+        const parentTerminalList = parent.terminalList(Parser.TerminalType.ENDING, [child])
+        const childTerminalList = child.terminalList(Parser.TerminalType.ONLY, [parent])
+        if (parentTerminalList[0] === child && childTerminalList.includes(parent)) {
+            const R = /** @type {new (p: Parser<any>) => Regexer<typeof p>} */(context.regexer.constructor)
+            const asR = p => new R(p)
+            const repeated = asR(parent.wrap(...parent.parsers.slice(0, index)))
             const result = repeated.atLeast(1).chain(v =>
-                new R(v.reduceRight(
+                asR(v.reduceRight(
                     (acc, cur) => {
                         const p = parent.unwrap()[index].withActualParser(
-                            acc[0],
-                            [OptionalParser],
-                            [acc[1]]
+                            acc,
+                            [AlternativeParser],
+                            [parent],
+                            parent
                         )
-                        acc[1] = acc[0]
-                        acc[0] = (new R(p)).map(v => [cur, v]).getParser()
-                        return acc
+                        return (new R(p)).map(v => [cur, v]).getParser()
                     },
-                    [new SuccessParser(), OptionalParser]
-                )[0])
+                    null // null as the first argument of withActualParser will produce an AlternativeParser without the parent alternative (last argument)
+                ))
             ).getParser()
             return result
         }

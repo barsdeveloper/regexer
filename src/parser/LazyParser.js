@@ -25,7 +25,7 @@ export default class LazyParser extends Parser {
         return this.#resolvedPraser
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.resolve()]
     }
 

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import AlternativeParser from "../src/parser/AlternativeParser.js"
 import ChainedParser from "../src/parser/ChainedParser.js"
 import InlineParsersTransformer from "../src/transformers/InlineParsersTransformer.js"
 import LookaroundParser from "../src/parser/LookaroundParser.js"
@@ -560,7 +561,32 @@ test("Recursive sequence 3", ({ page }) => {
 })
 
 test("Recursive sequence 4", ({ page }) => {
-
+    const recursiveSequence = new RecursiveSequenceTransformer()
+    const f1 = /** @param {String} v */ v => `a${v}b`
+    const f2 = /** @param {String} v */ v => `c${v}d`
+    const f3 = /** @param {String} v */ v => `e${v}f`
+    /** @type {Regexer<Parser<any>>} */
+    const p = R.seq(
+        R.regexp(/./),
+        R.regexp(/./),
+        R.alt(R.str("X"), R.lazy(() => p.map(f1)).map(f2), R.str("Y")).map(f3)
+    )
+    const mappings = new R(p.getParser().unwrap()[2].withActualParser(
+        R.success().getParser(),
+        [AlternativeParser],
+        [p.getParser()],
+        p.getParser()
+    ))
+    expect(mappings.parse("")).toEqual("ecabdf")
+    const transformed =  /** @type {Regexer<ChainedParser>} */(/** @type {unknown} */(recursiveSequence.run(p)))
+    // expect(
+    //     R.equals(transformed.getParser().parser, R.seq(R.regexp(/./), R.regexp(/./)).atLeast(1))
+    // ).toBeTruthy()
+    const output = v => {
+        expect(v.toString()).toEqual("0,1,eca2,3,eca4,5,eca6,7,eca8,9,eXfbdfbdfbdfbdf")
+    }
+    p.map(output).parse("0123456789X")
+    transformed.map(output).parse("0123456789X")
 })
 
 // test("Test 2", ({ page }) => {

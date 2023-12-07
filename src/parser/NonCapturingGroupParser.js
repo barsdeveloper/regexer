@@ -26,7 +26,7 @@ export default class NonCapturingGroupParser extends Parser {
         this.#parser = parser
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 

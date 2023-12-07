@@ -23,7 +23,7 @@ export default class CapturingGroupParser extends Parser {
         this.#id = id
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 

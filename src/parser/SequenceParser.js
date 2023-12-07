@@ -67,7 +67,7 @@ export default class SequenceParser extends Parser {
         return this.#parsers.every(p => p.matchesEmpty())
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [...this.#parsers]
     }
 

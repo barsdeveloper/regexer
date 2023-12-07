@@ -44,7 +44,7 @@ export default class LookaroundParser extends Parser {
         return []
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 

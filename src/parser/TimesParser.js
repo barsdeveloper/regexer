@@ -57,7 +57,7 @@ export default class TimesParser extends Parser {
         return result
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 

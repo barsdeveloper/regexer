@@ -76,7 +76,7 @@ class Reply {
     }
 
     /** @param {Regexer<Parser<any>>} regexer */
-    static makeContext(regexer, input = "") {
+    static makeContext(regexer = null, input = "") {
         return /** @type {Context} */({
             regexer: regexer,
             input: input,
@@ -108,8 +108,14 @@ class Parser {
     /** @type {{[k: TerminalType]: Parser<any>[]}} */
     #starterList = {}
 
+    /** @protected */
+    predicate = v => this === v || v instanceof Function && this instanceof v
+
     /** Calling parse() can make it change the overall parsing outcome */
     isActualParser = true
+
+    /** @type {(new (...args: any) => Parser) & typeof Parser} */
+    Self
 
     /**
      * @param {Result<any>} a
@@ -124,6 +130,11 @@ class Parser {
             position: a.position,
             value: a.value,
         })
+    }
+
+    constructor() {
+        // @ts-expect-error
+        this.Self = this.constructor;
     }
 
     matchesEmpty() {
@@ -150,19 +161,22 @@ class Parser {
      * @param {TerminalType} type
      * @param {Parser<any>[]} additional Additional non terminal parsers that will be considered part of the starter list when encounter even though non terminals
      */
-    terminalList(type, context = Reply.makeContext(null, ""), additional = []) {
-        if (!this.#starterList[type]) {
-            if (context.visited.has(this)) {
-                return [] // Break the infinite recursion, this.#starterList[type] will be set elsewhere in the call stack
-            }
-            context.visited.add(this);
-            this.#starterList[type] = this.doTerminalList(type, context, additional);
-            if (additional.length) {
-                this.#starterList[type] = this.#starterList[type]
-                    .filter(v => !/** @type {typeof Parser} */(v.constructor).isTerminal && additional.includes(v));
-            }
+    terminalList(type, additional = [], context = Reply.makeContext(null, "")) {
+        if (context.visited.has(this)) {
+            return [] // Break the infinite recursion, this.#starterList[type] will be set elsewhere in the call stack
         }
+        if (this.#starterList[type] && additional.length === 0) {
+            // Memoized version
+            return this.#starterList[type]
+        }
+        context.visited.set(this, null);
+        this.#starterList[type] = this.doTerminalList(type, additional, context);
         let result = this.#starterList[type];
+        if (additional.length) {
+            // Clear from the memoized starter list values that would not find their way in otherwise
+            this.#starterList[type] = this.#starterList[type]
+                .filter(v => /** @type {typeof Parser} */(v.constructor).isTerminal || !additional.includes(v));
+        }
         if (!/** @type {typeof Parser} */(this.constructor).isTerminal && additional.includes(this)) {
             result = [this, ...result];
         }
@@ -172,12 +186,13 @@ class Parser {
     /**
      * @protected
      * @param {TerminalType} type
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         let unwrapped = this.unwrap();
         return unwrapped?.length === 1
-            ? unwrapped[0].terminalList(type, context, additional)
+            ? unwrapped[0].terminalList(type, additional, context)
             : []
     }
 
@@ -189,9 +204,8 @@ class Parser {
         //return this.equals(context, parser, false)
     }
 
-    /** @returns {Parser<T>[]} */
-    unwrap() {
-        return []
+    unwrap(target = /** @type {Parser<any>} */(null)) {
+        return /** @type {Parser<T>[]} */([])
     }
 
     /**
@@ -215,30 +229,28 @@ class Parser {
     /**
      * @param {ConstructorType<Parser<any>>[]} traverse List of types to ignore and traverse even though they have isActualParser = true
      * @param {ConstructorType<Parser<any>>[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @param {Parser<any>?} target Unwrap the Alternative's branch containing this parser
      * @returns {Parser<any>}
      */
-    actualParser(traverse = [], opaque = []) {
-        let isTraversable = (!this.isActualParser || traverse.find(type => this instanceof type))
-            && !opaque.find(type => this instanceof type);
-        let unwrapped = isTraversable ? this.unwrap() : undefined;
+    actualParser(traverse = [], opaque = [], target = null) {
+        let isTraversable = (!this.isActualParser || traverse.some(this.predicate)) && !opaque.some(this.predicate);
+        let unwrapped = isTraversable ? this.unwrap(target) : undefined;
         isTraversable &&= unwrapped?.length === 1;
-        return isTraversable ? unwrapped[0].actualParser(traverse, opaque) : this
+        return isTraversable ? unwrapped[0].actualParser(traverse, opaque, target) : this
     }
 
     /**
-     * @param {Parser<any>} other
-     * @param {ConstructorType<Parser<any>>[]} traverse List of types to ignore and traverse even though they have isActualParser = true
-     * @param {ConstructorType<Parser<any>>[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @param {Parser<any>?} other
+     * @param {(Parser<any> | ConstructorType<Parser<any>>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {(Parser<any> | ConstructorType<Parser<any>>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @param {Parser<any>?} target Unwrap the Alternative's branch containing this parser
      * @returns {Parser<any>}
      */
-    withActualParser(other, traverse = [], opaque = []) {
-        let isTraversable = (!this.isActualParser || traverse.some(type => this instanceof type))
-            && !opaque.some(type => this instanceof type);
-        let unwrapped = isTraversable ? this.unwrap() : undefined;
+    withActualParser(other, traverse = [], opaque = [], target = null) {
+        let isTraversable = (!this.isActualParser || traverse.some(this.predicate)) && !opaque.some(this.predicate);
+        let unwrapped = isTraversable ? this.unwrap(target) : undefined;
         isTraversable &&= unwrapped?.length === 1;
-        return isTraversable
-            ? this.wrap(unwrapped[0].withActualParser(other, traverse, opaque))
-            : other
+        return isTraversable ? this.wrap(unwrapped[0].withActualParser(other, traverse, opaque, target)) : other
     }
 
     /**
@@ -290,7 +302,7 @@ class Parser {
         if (context.visited.has(this)) {
             return "<...>" // Recursive parser
         }
-        context.visited.add(this);
+        context.visited.set(this, null);
         return this.doToString(context, indent)
     }
 
@@ -330,9 +342,10 @@ class StringParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         if (this.value === "") {
             return [StringParser.successParserInstance]
         }
@@ -449,31 +462,66 @@ class AlternativeParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         return this.#parsers
-            .flatMap(p => p.terminalList(type, context))
+            .flatMap(p => p.terminalList(type, additional, context))
             .reduce(
-                (acc, cur) => acc.some(p => p.equals(context, cur, true)) ? acc : (acc.push(cur), acc),
+                (acc, cur) => acc.some(p => p.equals(Reply.makeContext(), cur, true)) ? acc : (acc.push(cur), acc),
                 /** @type {Parser<any>[]} */([])
             )
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
+        if (target) {
+            const result = this.#parsers.find(p =>
+                p.terminalList(Parser.TerminalType.ONLY, [target]).includes(target)
+            );
+            if (result) {
+                return [result]
+            }
+        }
         return [...this.#parsers]
     }
 
     /**
      * @template {Parser<any>[]} T
      * @param {T} parsers
+     * @returns {AlternativeParser<T>}
      */
     wrap(...parsers) {
-        const result = new AlternativeParser(...parsers);
-        if (this.#backtracking) {
-            result.#backtracking = true;
-        }
+        // @ts-expect-error
+        const result = /** @type {AlternativeParser<T>} */(new this.Self(...parsers));
+        result.#backtracking = this.#backtracking;
         return result
+    }
+
+    /**
+     * @param {Parser<any>?} other
+     * @param {(Parser<any> | ConstructorType<Parser<any>>)[]} traverse List of types to ignore and traverse even though they have isActualParser = true
+     * @param {(Parser<any> | ConstructorType<Parser<any>>)[]} opaque List of types to consider actual parser even though they have isActualParser = false
+     * @param {Parser<any>?} target Unwrap the Alternative's branch containing this parser
+     * @returns {Parser<any>}
+     */
+    withActualParser(other, traverse = [], opaque = [], target = null) {
+        if (other !== null || target === null) {
+            return super.withActualParser(other, traverse, opaque, target)
+        }
+        // It is trying to drop one of the alternatives: other is null or no target was specified
+        const isTraversable = (!this.isActualParser || traverse.some(this.predicate)) && !opaque.some(this.predicate);
+        if (!isTraversable) {
+            return other
+        }
+        const targetChild = this.unwrap(target)?.[0];
+        if (!targetChild) {
+            return other
+        }
+        const targetIndex = this.#parsers.indexOf(targetChild);
+        const result = [...this.#parsers];
+        result.splice(targetIndex, 1);
+        return this.wrap(...result)
     }
 
     asBacktracking() {
@@ -571,7 +619,7 @@ class ChainedParser extends Parser {
         return false
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 
@@ -626,9 +674,10 @@ class FailureParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         return [this]
     }
 
@@ -684,7 +733,7 @@ class LazyParser extends Parser {
         return this.#resolvedPraser
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.resolve()]
     }
 
@@ -772,13 +821,14 @@ class LookaroundParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         return []
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 
@@ -859,7 +909,7 @@ class MapParser extends Parser {
         this.#mapper = mapper;
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 
@@ -952,9 +1002,10 @@ class RegExpParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         return [this]
     }
 
@@ -1016,16 +1067,17 @@ class SequenceParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
+    doTerminalList(type, additional, context) {
         if (type === 0) {
             for (let i = 0; i < this.#parsers.length; ++i) {
                 if (!this.#parsers[i].matchesEmpty()) {
                     for (let j = this.#parsers.length - 1; j >= i; --j) {
                         if (!this.#parsers[j].matchesEmpty()) {
                             if (i == j) {
-                                return this.#parsers[i].terminalList(type, context, additional)
+                                return this.#parsers[i].terminalList(type, additional, context)
                             } else {
                                 return []
                             }
@@ -1037,9 +1089,9 @@ class SequenceParser extends Parser {
         }
         let i = type < 0 ? 0 : this.#parsers.length - 1;
         const delta = -type;
-        const result = this.#parsers[i].terminalList(type, context);
+        const result = this.#parsers[i].terminalList(type, additional, context);
         for (i += delta; i >= 0 && i < this.#parsers.length && this.#parsers[i - delta].matchesEmpty(); i += delta) {
-            this.#parsers[i].terminalList(type, context).reduce(
+            this.#parsers[i].terminalList(type, additional, context).reduce(
                 (acc, cur) => acc.some(p => p.equals(context, cur, false)) ? acc : (acc.push(cur), acc),
                 result
             );
@@ -1058,7 +1110,7 @@ class SequenceParser extends Parser {
         return this.#parsers.every(p => p.matchesEmpty())
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [...this.#parsers]
     }
 
@@ -1165,17 +1217,18 @@ class TimesParser extends Parser {
 
     /**
      * @protected
+     * @param {Parser<any>[]} additional
      * @param {Context} context
      */
-    doTerminalList(type, context, additional = /** @type {Parser<any>[]} */([])) {
-        const result = this.#parser.terminalList(type, context);
+    doTerminalList(type, additional, context) {
+        const result = this.#parser.terminalList(type, additional, context);
         if (this.matchesEmpty() && !result.some(p => SuccessParser.instance.equals(context, p, false))) {
             result.push(SuccessParser.instance);
         }
         return result
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 
@@ -1246,6 +1299,32 @@ class TimesParser extends Parser {
                             + (this.#min !== this.#max ? "," : this.#max !== Number.POSITIVE_INFINITY ? this.#max : "")
                             + "}"
             )
+    }
+}
+
+/**
+ * @template {Parser<any>} T
+ * @extends {AlternativeParser<[ParserValue<T>, SuccessParser]>}
+ */
+class OptionalParser extends AlternativeParser {
+
+    /** @param {T} parser */
+    constructor(parser) {
+        super(parser, SuccessParser.instance);
+    }
+
+    unwrap(target = /** @type {Parser<any>} */(null)) {
+        return [this.parsers[0]]
+    }
+
+    /**
+     * @template {Parser<any>[]} T
+     * @param {T} parsers
+     * @returns {OptionalParser<T>}
+     */
+    wrap(...parsers) {
+        // @ts-expect-error
+        return super.wrap(...parsers, SuccessParser.instance)
     }
 }
 
@@ -1460,10 +1539,7 @@ class Regexer {
     /** @returns {Regexer<T?>} */
     opt() {
         // @ts-expect-error
-        return this.Self.alt(
-            this,
-            this.Self.success()
-        )
+        return new this.Self(new OptionalParser(this.#parser))
     }
 
     /**
@@ -1505,10 +1581,10 @@ class Regexer {
      * @return {Regexer<T>}
      */
     assert(fn) {
-        return this.chain((v, input, position) => fn(v, input, position)
+        return /** @type {Regexer<T>} */(this.chain((v, input, position) => fn(v, input, position)
             ? this.Self.success().map(() => v)
             : this.Self.failure()
-        )
+        ))
     }
 
     join(value = "") {

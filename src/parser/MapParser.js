@@ -29,7 +29,7 @@ export default class MapParser extends Parser {
         this.#mapper = mapper
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 

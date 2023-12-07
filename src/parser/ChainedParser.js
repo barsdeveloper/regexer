@@ -30,7 +30,7 @@ export default class ChainedParser extends Parser {
         return false
     }
 
-    unwrap() {
+    unwrap(target = /** @type {Parser<any>} */(null)) {
         return [this.#parser]
     }
 

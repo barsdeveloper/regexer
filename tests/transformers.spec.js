@@ -569,7 +569,11 @@ test("Recursive sequence 4", ({ page }) => {
     const p = R.seq(
         R.regexp(/./),
         R.regexp(/./),
-        R.alt(R.str("X"), R.lazy(() => p.map(f1)).map(f2), R.str("Y")).map(f3)
+        R.alt(
+            R.str("X"),
+            R.str("Y"),
+            R.lazy(() => p.map(f1)).map(f2),
+        ).map(f3)
     )
     const mappings = new R(p.getParser().unwrap()[2].withActualParser(
         R.success().getParser(),
@@ -580,7 +584,13 @@ test("Recursive sequence 4", ({ page }) => {
     expect(mappings.parse("")).toEqual("ecabdf")
     const transformed =  /** @type {Regexer<ChainedParser>} */(/** @type {unknown} */(recursiveSequence.run(p)))
     // expect(
-    //     R.equals(transformed.getParser().parser, R.seq(R.regexp(/./), R.regexp(/./)).atLeast(1))
+    //     R.equals(
+    //         transformed.getParser().parser,
+    //         R.seq(
+    //             R.seq(R.regexp(/./), R.regexp(/./)).atLeast(1),
+    //             R.alt(R.str("X"), R.str("Y")).map(f3)
+    //         )
+    //     )
     // ).toBeTruthy()
     const output = v => {
         expect(v.toString()).toEqual("0,1,eca2,3,eca4,5,eca6,7,eca8,9,eXfbdfbdfbdfbdf")

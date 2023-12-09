@@ -110,13 +110,6 @@ export default class Parser {
             : []
     }
 
-    /**
-     * In an alternative, this would always match parser could might
-     * @param {Parser<any>} parser
-     */
-    dominates(parser) {
-        //return this.equals(context, parser, false)
-    }
 
     unwrap(target = /** @type {Parser<any>} */(null)) {
         return /** @type {Parser<T>[]} */([])

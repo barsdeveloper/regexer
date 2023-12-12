@@ -26,20 +26,21 @@ export default class RecursiveSequenceTransformer extends ParentChildTransformer
      * @returns {Parser<any>?}
      */
     doTransformParent(context, parent, child, index, previousChild) {
-        const firstEndingParentTermina = parent.terminalList(Parser.TerminalType.ENDING, [child]).find(
-            v => !SuccessParser.instance.equals(Reply.makeContext(), v, false)
-        )
-        if (firstEndingParentTermina !== child) {
+        const endingParentTerminal = parent.terminalList(Parser.TerminalType.ENDING, [child])
+        if (endingParentTerminal.find(v => v !== SuccessParser.instance) !== child) {
             // The parent doesn't end with the child
             return parent
         }
-        const lastOnlyChildTerminal = child.terminalList(Parser.TerminalType.ONLY, [parent]).findLast(
-            v => !SuccessParser.instance.equals(Reply.makeContext(), v, false)
-        )
-        if (lastOnlyChildTerminal !== parent) {
+        const onlyChildTerminal = child.terminalList(Parser.TerminalType.ONLY, [parent])
+        const lastOnlyChildTerminal = onlyChildTerminal.findLast(v => v !== SuccessParser.instance)
+        if (
+            onlyChildTerminal[0] !== parent
+            || lastOnlyChildTerminal !== parent //&& !endingParentTerminal.includes(lastOnlyChildTerminal)
+        ) {
             // The child doesn't match the parent in its full length, in the last position
             return parent
         }
+
         const R = /** @type {new (p: Parser<any>) => Regexer<typeof p>} */(context.regexer.constructor)
         const asR = p => new R(p)
         const repeated = asR(parent.wrap(...parent.parsers.slice(0, index)))
@@ -52,7 +53,7 @@ export default class RecursiveSequenceTransformer extends ParentChildTransformer
                         [parent],
                         parent
                     )
-                    return (new R(p)).map(v => [cur, v]).getParser()
+                    return asR(p).map(v => [cur, v]).getParser()
                 },
                 null // null as the first argument of withActualParser will produce an AlternativeParser without the parent alternative (last argument)
             ))

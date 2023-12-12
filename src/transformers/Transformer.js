@@ -46,14 +46,32 @@ export default class Transformer {
      * @return {T}
      */
     transform(context, parser) {
-        let result = /** @type {T} */(context.visited.get(parser))
+        const p = parser.actualParser(this.traverse, this.opaque)
+        let result = /** @type {T} */(context.visited.get(p))
         if (result !== undefined) {
-            return result
+            return result !== p
+                ? /** @type {T} */(parser.withActualParser(result, this.traverse, this.opaque))
+                : parser
         }
-        context.visited.set(parser, parser)
-        result = this.doTransform(context, parser)
-        context.visited.set(parser, result)
-        return result
+        context.visited.set(p, p)
+        result = /** @type {T} */(this.doTransform(context, p))
+        if (result === p) {
+            // Transformed did not change the parser
+            let changed = false
+            const children = p.unwrap().map(child => {
+                const transformed = this.transform(context, child)
+                changed ||= transformed !== child
+                return transformed
+            })
+            if (changed) {
+                result = /** @type {T} */(result.wrap(...children))
+            }
+        }
+        if (result !== p) {
+            context.visited.set(p, result)
+            return /** @type {T} */(parser.withActualParser(result, this.traverse, this.opaque))
+        }
+        return parser
     }
 
     /**

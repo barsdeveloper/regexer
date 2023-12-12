@@ -33,20 +33,20 @@ export default class ParentChildTransformer extends Transformer {
      */
     doTransform(context, parser) {
         const Self = /** @type {typeof ParentChildTransformer} */(this.constructor)
-        let changed = false
-        let children = parser.unwrap()
-        if (this.#parentTypes.find(t => parser instanceof t)) {
+        if (this.#parentTypes.some(t => parser instanceof t)) {
             let previous = null
-            let current = previous
+            let current
             if (this.#childTypes.length === 0) {
                 const newParent = this.doTransformParent(context, parser, null, -1, null)
                 if (newParent && newParent != parser) {
                     return /** @type {T} */(this.transform(context, newParent))
                 }
             } else {
+                let changed = false
+                const children = parser.unwrap()
                 for (let i = 0; i < children.length; previous = current, ++i) {
                     current = children[i].actualParser(this.traverse, this.opaque)
-                    if (this.#childTypes.find(t => current instanceof t)) {
+                    if (this.#childTypes.some(t => current instanceof t)) {
                         const newParent = this.doTransformParent(context, parser, current, i, previous)
                         if (newParent && newParent != parser) {
                             return /** @type {T} */(this.transform(context, newParent))
@@ -71,16 +71,10 @@ export default class ParentChildTransformer extends Transformer {
                         changed = true
                     }
                 }
+                if (changed) {
+                    return /** @type {T} */(this.transform(context, parser.wrap(...children)))
+                }
             }
-        } else {
-            children = children.map(child => {
-                const transformed = this.transform(context, child)
-                changed ||= child !== transformed
-                return transformed
-            })
-        }
-        if (changed) {
-            return /** @type {T} */(this.transform(context, parser.wrap(...children)))
         }
         return parser
     }

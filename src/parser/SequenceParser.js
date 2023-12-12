@@ -28,7 +28,7 @@ export default class SequenceParser extends Parser {
      * @param {Context} context
      */
     doTerminalList(type, additional, context) {
-        if (type === 0) {
+        if (type === Parser.TerminalType.ONLY) {
             for (let i = 0; i < this.#parsers.length; ++i) {
                 if (!this.#parsers[i].matchesEmpty()) {
                     for (let j = this.#parsers.length - 1; j >= i; --j) {

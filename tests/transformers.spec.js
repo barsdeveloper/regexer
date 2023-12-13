@@ -627,12 +627,13 @@ test("Recursive sequence 5 (nested)", ({ page }) => {
     const recursiveSequence = new RecursiveSequenceTransformer()
     /** @type {Regexer<Parser<String>>} */
     const b = R.nonGrp(
-        R.grp(R.seq(
+        R.nonGrp(R.seq(
             R.str("b").map(f2), R.lazy(() => b).opt()
         )).map(f1)
     )
     expect(R.equals(
-        recursiveSequence.run(b),
+        // @ts-expect-error
+        recursiveSequence.run(b).getParser().actualParser().parser,
         // @ts-expect-error
         R.seq(R.str("b")).atLeast(1),
         false

@@ -73,26 +73,30 @@ export default class Parser {
     /**
      * List of starting terminal parsers
      * @param {TerminalType} type
-     * @param {Parser<any>[]} additional Additional non terminal parsers that will be considered part of the starter list when encounter even though non terminals
+     * @param {Parser<any>[]} additionalTerminals Additional non terminal parsers that will be considered part of the starter list when encounter even though non terminals
      */
-    terminalList(type, additional = [], context = Reply.makeContext(null, "")) {
+    terminalList(type, additionalTerminals = [], context = Reply.makeContext(null, "")) {
         if (context.visited.has(this)) {
             return [] // Break the infinite recursion, this.#starterList[type] will be set elsewhere in the call stack
         }
-        if (this.#starterList[type] && additional.length === 0) {
+        const hasNonTerminals = additionalTerminals.some(v => !/** @type {typeof Parser} */(v.constructor).isTerminal)
+        if (this.#starterList[type] && !hasNonTerminals) {
             // Memoized version
             return this.#starterList[type]
         }
         context.visited.set(this, null)
-        this.#starterList[type] = this.doTerminalList(type, additional, context)
+        if (additionalTerminals.includes(this) && !this.matchesEmpty()) {
+            return [this]
+        }
+        this.#starterList[type] = this.doTerminalList(type, additionalTerminals, context)
         let result = this.#starterList[type]
-        if (additional.length) {
+        if (hasNonTerminals) {
             // Clear from the memoized starter list values that would not find their way in otherwise
             this.#starterList[type] = this.#starterList[type]
-                .filter(v => /** @type {typeof Parser} */(v.constructor).isTerminal || !additional.includes(v))
+                .filter(v => /** @type {typeof Parser} */(v.constructor).isTerminal)
         }
-        if (!/** @type {typeof Parser} */(this.constructor).isTerminal && additional.includes(this)) {
-            result = [this, ...result]
+        if (additionalTerminals.includes(this) && !/** @type {typeof Parser} */(this.constructor).isTerminal) {
+            result.unshift(this)
         }
         return result
     }
@@ -100,13 +104,13 @@ export default class Parser {
     /**
      * @protected
      * @param {TerminalType} type
-     * @param {Parser<any>[]} additional
+     * @param {Parser<any>[]} additionalTerminals
      * @param {Context} context
      */
-    doTerminalList(type, additional, context) {
+    doTerminalList(type, additionalTerminals, context) {
         let unwrapped = this.unwrap()
         return unwrapped?.length === 1
-            ? unwrapped[0].terminalList(type, additional, context)
+            ? unwrapped[0].terminalList(type, additionalTerminals, context)
             : []
     }
 

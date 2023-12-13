@@ -24,17 +24,17 @@ export default class SequenceParser extends Parser {
 
     /**
      * @protected
-     * @param {Parser<any>[]} additional
+     * @param {Parser<any>[]} additionalTerminals
      * @param {Context} context
      */
-    doTerminalList(type, additional, context) {
+    doTerminalList(type, additionalTerminals, context) {
         if (type === Parser.TerminalType.ONLY) {
             for (let i = 0; i < this.#parsers.length; ++i) {
                 if (!this.#parsers[i].matchesEmpty()) {
                     for (let j = this.#parsers.length - 1; j >= i; --j) {
                         if (!this.#parsers[j].matchesEmpty()) {
                             if (i == j) {
-                                return this.#parsers[i].terminalList(type, additional, context)
+                                return this.#parsers[i].terminalList(type, additionalTerminals, context)
                             } else {
                                 return []
                             }
@@ -46,9 +46,9 @@ export default class SequenceParser extends Parser {
         }
         let i = type < 0 ? 0 : this.#parsers.length - 1
         const delta = -type
-        const result = this.#parsers[i].terminalList(type, additional, context)
+        const result = this.#parsers[i].terminalList(type, additionalTerminals, context)
         for (i += delta; i >= 0 && i < this.#parsers.length && this.#parsers[i - delta].matchesEmpty(); i += delta) {
-            this.#parsers[i].terminalList(type, additional, context).reduce(
+            this.#parsers[i].terminalList(type, additionalTerminals, context).reduce(
                 (acc, cur) => acc.some(p => p.equals(context, cur, false)) ? acc : (acc.push(cur), acc),
                 result
             )

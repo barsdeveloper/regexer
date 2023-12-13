@@ -46,11 +46,11 @@ export default class TimesParser extends Parser {
 
     /**
      * @protected
-     * @param {Parser<any>[]} additional
+     * @param {Parser<any>[]} additionalTerminals
      * @param {Context} context
      */
-    doTerminalList(type, additional, context) {
-        const result = this.#parser.terminalList(type, additional, context)
+    doTerminalList(type, additionalTerminals, context) {
+        const result = this.#parser.terminalList(type, additionalTerminals, context)
         if (this.matchesEmpty() && !result.some(p => SuccessParser.instance.equals(context, p, false))) {
             result.push(SuccessParser.instance)
         }

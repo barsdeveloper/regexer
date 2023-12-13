@@ -35,12 +35,12 @@ export default class AlternativeParser extends Parser {
 
     /**
      * @protected
-     * @param {Parser<any>[]} additional
+     * @param {Parser<any>[]} additionalTerminals
      * @param {Context} context
      */
-    doTerminalList(type, additional, context) {
+    doTerminalList(type, additionalTerminals, context) {
         return this.#parsers
-            .flatMap(p => p.terminalList(type, additional, context))
+            .flatMap(p => p.terminalList(type, additionalTerminals, context))
             .reduce(
                 (acc, cur) => acc.some(p => p.equals(Reply.makeContext(), cur, true)) ? acc : (acc.push(cur), acc),
                 /** @type {Parser<any>[]} */([])
